@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sleuth</title>
+<style>
+:root{--bg:#06070b;--panel:#0e1017;--panel2:#131621;--line:#232738;--tx:#e9ecf5;--dim:#7c849b;--blue:#4d8dff;--vio:#8d63f5;--red:#ff4a5c;--amb:#ffb224;--grn:#34d399}
+*{box-sizing:border-box}[hidden]{display:none!important}html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+body{background:radial-gradient(900px 500px at 10% -10%,#4d8dff1c,transparent),radial-gradient(900px 500px at 100% 110%,#8d63f51c,transparent),var(--bg);min-height:100vh}
+.wrap{max-width:1500px;margin:0 auto;padding:18px}
+header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:650;font-size:20px;letter-spacing:-.3px}
+.brand b{background:linear-gradient(90deg,#7aa5ff,#a98bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.tab{background:var(--panel);border:1px solid var(--line);color:var(--dim);padding:8px 14px;border-radius:10px;cursor:pointer;font:inherit;font-size:14px}
+.tab.on{color:var(--tx);border-color:#5b6cff;background:#171b2e}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:14px}
+.bar h1{font-size:18px;margin:0;font-weight:650}.bar .dim{color:var(--dim)}
+.chip{white-space:nowrap;display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:650;letter-spacing:.3px;border:1px solid}
+.red{color:var(--red);background:#ff4a5c1f;border-color:#ff4a5c77}.amb{color:var(--amb);background:#ffb2241f;border-color:#ffb22477}.vio{color:#b9a3ff;background:#8d63f51f;border-color:#8d63f577}.grn{color:var(--grn);background:#34d3991f;border-color:#34d39977}.gry{color:var(--dim);background:#ffffff0d;border-color:#ffffff22}
+.grid{display:grid;grid-template-columns:340px minmax(0,1fr) 430px;gap:14px;align-items:start}
+@media(max-width:1180px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h2{font-size:15px;margin:0 0 12px;font-weight:650}
+.card h3{font-size:12px;margin:14px 0 6px;color:var(--dim);letter-spacing:.8px;text-transform:uppercase;font-weight:650}
+.tl{position:relative;margin:0;padding:0;list-style:none}
+.tl li{display:grid;grid-template-columns:48px 14px 1fr;gap:8px;padding:7px 8px;border-radius:10px;cursor:default;position:relative}
+.tl li .t{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--dim);padding-top:2px}
+.tl li .d{width:10px;height:10px;border-radius:50%;margin-top:5px;background:var(--dim)}
+.tl li .x{font-size:13.5px}.tl li .s{font-size:12px;color:var(--dim)}
+.tl li.hl{background:#8d63f51c;outline:1px solid #8d63f577}
+.tl li.fade{opacity:.45}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--dim);margin-bottom:6px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+svg text{font:11px ui-monospace,Menlo,monospace;fill:#6d7590}
+.row{display:flex;align-items:center;gap:10px;background:var(--panel2);border-radius:10px;padding:9px 12px;margin-bottom:8px;font-size:14px}
+.row .sp{margin-left:auto;color:var(--dim);font-size:12.5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:700px){.two{grid-template-columns:1fr}}
+.hyp{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer}
+.hyp.sel{border-color:#8d63f5aa;background:#8d63f51a}
+.hyp .top{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.hyp .ttl{font-weight:650;font-size:14.5px}
+.meter{height:6px;border-radius:4px;background:#ffffff12;margin:8px 0 2px;overflow:hidden}.meter>i{display:block;height:100%;background:linear-gradient(90deg,#4d8dff,#8d63f5)}
+.small{font-size:12.5px;color:var(--dim)}
+ul.ev{margin:6px 0 0;padding-left:18px}ul.ev li{margin:5px 0;font-size:13.5px;color:#c4cadb}
+ol.st{margin:6px 0 0;padding-left:20px}ol.st li{margin:5px 0;font-size:13.5px;color:#c4cadb}
+pre.diff{margin:8px 0 0;padding:10px;background:#0a0c12;border:1px solid var(--line);border-radius:10px;font:12px/1.5 ui-monospace,Menlo,monospace;overflow:auto;max-height:150px}
+pre.diff .a{color:var(--grn)}pre.diff .r{color:var(--red)}
+.note{margin-top:12px;padding:10px 12px;border-radius:10px;background:#ffffff0a;color:#aab2c9;font-size:13px}
+.ask{display:flex;gap:8px;margin-top:6px}
+.ask input{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:10px 12px;font:inherit}
+.btn{background:linear-gradient(90deg,#4d8dff,#8d63f5);border:0;color:#fff;border-radius:10px;padding:10px 16px;font:inherit;font-weight:650;cursor:pointer}
+.sug{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.sug button{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:99px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.ans{margin-top:10px;white-space:pre-wrap;font-size:14px;color:#d6dbec}
+.comp{display:grid;grid-template-columns:90px 1fr 36px;gap:6px 8px;align-items:center;font-size:12px;color:var(--dim);margin-top:8px}
+.comp .m{height:5px;border-radius:3px;background:#ffffff12;overflow:hidden}.comp .m i{display:block;height:100%;background:#6a7cff}
+.rb{margin-top:14px;border:1px solid #8d63f577;background:#8d63f512;border-radius:12px;padding:12px}
+.rb .hd{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.rb pre{white-space:pre-wrap}
+.btn2{background:transparent;border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:7px 12px;font:inherit;font-size:13px;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th{text-align:left;color:var(--dim);font-weight:600;font-size:12px;letter-spacing:.6px;text-transform:uppercase;padding:6px 8px}td{padding:8px;border-top:1px solid var(--line)}
+.gfbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.gfbar .ttl{font-weight:650;font-size:14.5px}
+.panels{display:grid;grid-template-columns:1fr;gap:10px}
+.pnl{background:#0a0c12;border:1px solid var(--line);border-radius:10px;padding:8px 8px 6px}
+.pnl .ph{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px 2px;font-size:13px}
+.pnl .st{font:11.5px ui-monospace,Menlo,monospace;color:var(--dim)}
+.term{background:#07080d;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:12.5px/1.65 ui-monospace,Menlo,Consolas,monospace;overflow:auto;color:#c4cadb}
+.term .cmd{color:#7c849b}.term table{font:inherit;border-collapse:collapse;width:100%}.term th{font:inherit;color:#7c849b;text-transform:none;letter-spacing:0;padding:0 14px 0 0;text-align:left}.term td{border:0;padding:0 14px 0 0;white-space:nowrap}
+.ok{color:var(--grn)}.bad{color:var(--red)}.warn{color:var(--amb)}
+.gfout{margin-top:10px;font-size:13px}.gfout pre{margin:6px 0 0;padding:10px;background:#07080d;border:1px solid var(--line);border-radius:10px;font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-all}
+.chat{margin-top:10px;display:grid;gap:8px;max-height:460px;overflow:auto}
+.qm{justify-self:end;max-width:92%;background:#4d8dff22;border:1px solid #4d8dff55;border-radius:12px 12px 2px 12px;padding:8px 12px;font-size:14px}
+.am{justify-self:start;max-width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:12px 12px 12px 2px;padding:10px 12px;font-size:14px;white-space:pre-wrap;color:#d6dbec}
+.am .src{display:block;margin-top:8px;font-size:11.5px;color:var(--dim)}
+.steps{margin:10px 0 0;padding:0;list-style:none;font-size:13.5px;flex-basis:100%}
+.steps li{padding:5px 0;color:var(--dim)}.steps li.done{color:var(--tx)}.steps li.done::before{content:"\2713  ";color:var(--grn)}.steps li.run::before{content:"\2022  ";color:var(--amb)}
+.hgrid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:14px;margin-top:14px;align-items:start}@media(max-width:1000px){.hgrid{grid-template-columns:1fr}}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.tile{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}.tile .th{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:14px}.dot{width:9px;height:9px;border-radius:50%}
+.alertbar{display:flex;align-items:center;gap:14px;margin-top:14px;padding:14px 16px;border:1px solid #ff4a5c99;background:#ff4a5c1a;border-radius:14px}
+.pulse{width:12px;height:12px;border-radius:50%;background:var(--red);box-shadow:0 0 0 0 #ff4a5c99;animation:pl 1.3s infinite}@keyframes pl{70%{box-shadow:0 0 0 12px #ff4a5c00}100%{box-shadow:0 0 0 0 #ff4a5c00}}
+.hsel{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:9px;font:inherit;font-size:14px}
+.btn:disabled{opacity:.45;cursor:default}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;align-items:start;margin-top:14px}
+.f label{display:block;font-size:12.5px;color:var(--dim);margin:12px 0 4px}
+.f input,.f select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:9px 11px;font:inherit;font-size:14px}
+.f input[type=file]{padding:7px}
+.empty{padding:14px;border:1px dashed #3a4260;border-radius:12px;color:#c4cadb}
+</style></head>
+<body><div class="wrap">
+<header>
+  <div class="brand"><svg width="30" height="30" viewBox="0 0 40 40"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4d8dff"/><stop offset="1" stop-color="#8d63f5"/></linearGradient></defs><path d="M20 4a16 16 0 1 1-14 8" fill="none" stroke="url(#lg)" stroke-width="4" stroke-linecap="round"/><circle cx="20" cy="20" r="9" fill="none" stroke="#ffffff30" stroke-width="1.5"/><circle cx="20" cy="20" r="4.5" fill="url(#lg)"/></svg><span><b>Sleuth</b></span></div>
+  <div class="tabs" id="tabs"></div>
+</header>
+<div class="bar" id="bar"></div>
+<div id="home" hidden></div>
+<div id="connect" hidden></div>
+<div id="risk" hidden></div>
+<div class="grid" id="main">
+  <section class="card"><h2>Incident timeline</h2><ul class="tl" id="tl"></ul></section>
+  <section style="display:grid;gap:14px;min-width:0">
+    <div class="card" style="border-color:#3a3f6a"><h2>Ask Sleuth <span class="chip vio" style="margin-left:6px">GROUNDED IN THIS INCIDENT</span></h2>    
+    <div class="ask"><input id="q" placeholder="e.g. Why do you suspect this change?" /><button class="btn" id="go">Ask</button></div>
+    <div class="sug" id="sug"></div><div class="chat" id="chat"></div>
+</div>
+    <div class="card"><div class="gfbar"><span class="ttl" id="gft"></span><span class="chip gry" id="gfr"></span><span class="chip gry">Annotations: Azure Repos · Azure Pipelines</span><button class="btn2" id="gfBtn" style="margin-left:auto">Annotate in Grafana</button></div><div id="chart"></div><div class="gfout" id="gfout"></div></div>
+    <div class="card"><h2>Kubernetes <span class="chip gry" id="kctx" style="margin-left:6px"></span></h2><div id="kube"></div></div>
+    <div class="two">
+      <div class="card"><h2>Changes reviewed</h2><div id="changes"></div></div>
+      <div class="card"><h2>Impacted services</h2><div id="impacted"></div></div>
+    </div>
+  </section>
+  <section class="card" style="border-color:#3a3f6a"><h2>Investigation assistant <span class="chip vio" style="margin-left:6px">HYPOTHESES</span></h2><div id="sum" class="small" style="margin-bottom:10px"></div><div id="hyps"></div><div id="detail"></div>
+    <div class="note">Correlation is not proof of causation. Sleuth ranks evidence-backed hypotheses for engineers to validate. Demo data is simulated.</div>
+  </section>
+</div></div>
+<script>
+const DEMO_RAW={"pool": {"id": "pool", "title": "Checkout failures after v2.8.1", "incident": "Incident #1042", "sev": "SEV-2", "service": "checkout-api", "summary_hint": "Checkout errors and latency spike at 10:22\u201310:27", "graph": {"ingress": ["api-gateway"], "api-gateway": ["checkout-api"], "checkout-api": ["payment-svc", "orders-db"], "payment-svc": [], "orders-db": [], "marketing-site": []}, "meta": {"ingress": "edge", "api-gateway": "gateway", "checkout-api": "service", "payment-svc": "service", "orders-db": "database", "marketing-site": "web"}, "changes": [{"id": "c14a6e0", "type": "commit", "service": "checkout-api", "time": 552, "t": "09:12", "title": "feat: checkout promo banner", "detail": "Frontend template change", "diff": "+ <div class=\"promo\">\u2026</div>", "author": "s.iyer", "commits": [], "docs_only": false}, {"id": "deploy-2.8.0", "type": "deploy", "service": "checkout-api", "time": 560, "t": "09:20", "title": "Deployment v2.8.0", "detail": "Azure Pipelines run #2841", "diff": "", "author": "azure-pipelines", "commits": ["c14a6e0"], "docs_only": false}, {"id": "7be02d9", "type": "commit", "service": "payment-svc", "time": 581, "t": "09:41", "title": "fix: retry policy for payment client", "detail": "Client retry tuning", "diff": "- retry.max_attempts: 5\n+ retry.max_attempts: 3\n+ retry.backoff_ms: 200", "author": "j.chen", "commits": [], "docs_only": false}, {"id": "deploy-1.14.2", "type": "deploy", "service": "payment-svc", "time": 588, "t": "09:48", "title": "Deployment v1.14.2", "detail": "Azure Pipelines run #1177", "diff": "", "author": "azure-pipelines", "commits": ["7be02d9"], "docs_only": false}, {"id": "cert-rotation", "type": "infra", "service": "ingress", "time": 598, "t": "09:58", "title": "TLS certificate rotation", "detail": "AWS ACM certificate renewed", "diff": "", "author": "aws-acm", "commits": [], "docs_only": false}, {"id": "a3f91c2", "type": "commit", "service": "checkout-api", "time": 609, "t": "10:09", "title": "chore: tune db pool for peak load", "detail": "Connection pool settings", "diff": "--- a/config/db.yaml\n+++ b/config/db.yaml\n-  max_pool_size: 20\n+  max_pool_size: 100\n   connection_timeout_ms: 30000", "author": "m.rao", "commits": [], "docs_only": false}, {"id": "docs-runbook", "type": "commit", "service": "checkout-api", "time": 611, "t": "10:11", "title": "docs: runbook update", "detail": "Markdown only", "diff": "+ ## On-call checklist", "author": "l.novak", "commits": [], "docs_only": true}, {"id": "deploy-2.8.1", "type": "deploy", "service": "checkout-api", "time": 615, "t": "10:15", "title": "Deployment v2.8.1", "detail": "Azure Pipelines run #2842", "diff": "", "author": "azure-pipelines", "commits": ["a3f91c2", "docs-runbook"], "docs_only": false}, {"id": "mkt-5.3.0", "type": "deploy", "service": "marketing-site", "time": 614, "t": "10:14", "title": "Deployment v5.3.0", "detail": "Homepage copy changes", "diff": "", "author": "azure-pipelines", "commits": [], "docs_only": false}], "metrics": {"checkout-api": {"latency_p95_ms": [111.4, 122.6, 127.0, 116.4, 110.7, 119.5, 123.3, 127.7, 111.5, 110.9, 124.9, 123.3, 130.7, 126.9, 119.3, 118.1, 138.0, 118.0, 114.5, 112.0, 120.7, 121.0, 117.6, 119.6, 121.9, 124.8, 127.7, 121.5, 107.5, 124.9, 110.1, 118.8, 109.7, 120.0, 114.6, 121.5, 143.1, 119.7, 125.9, 110.7, 118.0, 124.6, 119.4, 122.6, 120.7, 113.0, 123.9, 114.3, 133.1, 116.5, 124.8, 120.0, 1184.4, 3138.0, 4207.0, 4199.1, 4208.8, 4204.4, 4201.0, 4194.5, 4205.4, 4203.3, 4211.5, 4197.4, 4203.9, 4203.6], "error_rate_5xx": [0.28, 0.42, 0.38, 0.36, 0.48, 0.41, 0.38, 0.54, 0.36, 0.3, 0.29, 0.36, 0.45, 0.47, 0.49, 0.55, 0.54, 0.45, 0.51, 0.46, 0.36, 0.47, 0.41, 0.39, 0.56, 0.47, 0.37, 0.4, 0.59, 0.38, 0.46, 0.45, 0.45, 0.45, 0.37, 0.37, 0.39, 0.38, 0.47, 0.53, 0.33, 0.45, 0.33, 0.35, 0.39, 0.41, 0.37, 0.19, 0.52, 0.38, 0.35, 0.46, 0.36, 0.29, 0.44, 19.24, 37.94, 38.07, 38.03, 37.91, 38.15, 38.03, 37.91, 38.04, 38.01, 38.08], "pod_restarts": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0]}, "orders-db": {"db_connections": [33.0, 33.0, 29.0, 28.0, 31.0, 32.0, 31.0, 29.0, 30.0, 33.0, 29.0, 33.0, 32.0, 32.0, 32.0, 30.0, 31.0, 34.0, 30.0, 30.0, 29.0, 30.0, 32.0, 33.0, 32.0, 32.0, 32.0, 32.0, 33.0, 31.0, 33.0, 31.0, 28.0, 29.0, 31.0, 30.0, 29.0, 30.0, 31.0, 32.0, 32.0, 30.0, 32.0, 33.0, 32.0, 34.0, 30.0, 31.0, 48.0, 79.0, 96.0, 96.0, 96.0, 95.0, 95.0, 96.0, 94.0, 96.0, 94.0, 96.0, 94.0, 96.0, 95.0, 96.0, 95.0, 96.0], "db_cpu_pct": [28.2, 28.0, 27.9, 27.1, 28.3, 28.0, 29.6, 26.4, 31.9, 23.1, 28.1, 29.4, 27.7, 26.8, 27.9, 29.1, 29.9, 25.6, 28.3, 27.0, 29.6, 27.2, 28.2, 29.6, 27.5, 28.3, 26.7, 27.4, 24.9, 26.5, 27.1, 26.8, 31.2, 24.3, 24.4, 28.2, 28.8, 28.1, 29.7, 31.1, 27.1, 25.8, 27.6, 29.7, 28.5, 27.6, 28.3, 28.3, 25.2, 28.6, 40.6, 67.5, 81.1, 82.0, 83.3, 81.6, 82.1, 83.3, 82.6, 80.8, 83.1, 81.2, 81.5, 82.2, 84.2, 80.5]}, "payment-svc": {"latency_p95_ms": [86.3, 94.4, 85.3, 92.7, 83.8, 93.9, 89.6, 97.1, 94.2, 90.3, 88.6, 92.4, 89.8, 85.7, 93.1, 77.9, 89.8, 100.6, 92.6, 83.1, 95.4, 90.9, 87.1, 87.0, 90.7, 94.2, 89.5, 98.8, 87.0, 94.3, 82.4, 80.5, 89.6, 91.4, 99.3, 88.5, 91.5, 84.1, 90.3, 92.9, 88.1, 95.2, 97.1, 93.1, 89.9, 89.2, 93.2, 85.1, 95.0, 87.2, 91.6, 84.7, 85.5, 86.2, 92.8, 456.0, 1135.0, 1505.1, 1495.8, 1504.6, 1497.3, 1495.7, 1497.5, 1505.4, 1508.4, 1497.4]}, "api-gateway": {"error_rate_5xx": [0.11, 0.19, 0.24, 0.19, 0.21, 0.12, 0.19, 0.18, 0.25, 0.21, 0.2, 0.16, 0.16, 0.2, 0.27, 0.1, 0.05, 0.3, 0.28, 0.23, 0.22, 0.18, 0.18, 0.14, 0.23, 0.19, 0.1, 0.17, 0.17, 0.17, 0.3, 0.26, 0.03, 0.23, 0.26, 0.27, 0.24, 0.1, 0.25, 0.21, 0.28, 0.23, 0.12, 0.3, 0.14, 0.26, 0.22, 0.17, 0.08, 0.16, 0.15, 0.19, 0.19, 0.29, 0.22, 0.26, 11.04, 21.98, 22.05, 22.05, 22.04, 21.98, 21.95, 22.1, 21.96, 21.98]}, "marketing-site": {"latency_p95_ms": [72.5, 75.3, 68.7, 72.3, 65.3, 70.3, 65.6, 70.6, 69.7, 73.0, 68.7, 66.7, 66.8, 63.7, 76.4, 62.8, 70.3, 72.9, 69.5, 64.8, 71.8, 75.7, 75.3, 64.6, 70.7, 73.3, 80.9, 70.5, 71.2, 76.3, 64.8, 68.7, 62.6, 68.8, 67.2, 68.0, 73.4, 73.0, 72.0, 69.0, 67.7, 64.8, 71.5, 72.3, 68.3, 66.1, 66.2, 72.5, 75.0, 73.7, 65.8, 67.4, 66.1, 76.2, 72.2, 65.5, 71.9, 71.2, 70.9, 71.3, 67.0, 66.0, 72.5, 78.4, 65.1, 64.8]}}, "logs": [{"time": 600.032, "t": "10:00:02", "level": "INFO", "service": "payment-svc", "msg": "Charge captured order=ok"}, {"time": 604.125, "t": "10:04:07", "level": "INFO", "service": "payment-svc", "msg": "Charge captured order=ok"}, {"time": 608.086, "t": "10:08:05", "level": "INFO", "service": "payment-svc", "msg": "Charge captured order=ok"}, {"time": 610.149, "t": "10:10:09", "level": "INFO", "service": "checkout-api", "msg": "GET /healthz 200 3ms"}, {"time": 612.043, "t": "10:12:03", "level": "INFO", "service": "payment-svc", "msg": "Charge captured order=ok"}, {"time": 612.958, "t": "10:12:57", "level": "INFO", "service": "checkout-api", "msg": "GET /healthz 200 3ms"}, {"time": 615.739, "t": "10:15:44", "level": "INFO", "service": "checkout-api", "msg": "GET /healthz 200 3ms"}, {"time": 618.701, "t": "10:18:42", "level": "INFO", "service": "checkout-api", "msg": "GET /healthz 200 3ms"}, {"time": 619.636, "t": "10:19:38", "level": "ERROR", "service": "orders-db", "msg": "FATAL: sorry, too many clients already"}, {"time": 620.482, "t": "10:20:29", "level": "ERROR", "service": "orders-db", "msg": "FATAL: sorry, too many clients already"}, {"time": 621.255, "t": "10:21:15", "level": "ERROR", "service": "orders-db", "msg": "FATAL: sorry, too many clients already"}, {"time": 621.573, "t": "10:21:34", "level": "INFO", "service": "checkout-api", "msg": "GET /healthz 200 3ms"}, {"time": 623.091, "t": "10:23:05", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 623.294, "t": "10:23:18", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 623.41, "t": "10:23:25", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 623.602, "t": "10:23:36", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 623.926, "t": "10:23:56", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 624.039, "t": "10:24:02", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 624.235, "t": "10:24:14", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 624.421, "t": "10:24:25", "level": "INFO", "service": "checkout-api", "msg": "GET /healthz 200 3ms"}, {"time": 624.549, "t": "10:24:33", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 624.671, "t": "10:24:40", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 624.925, "t": "10:24:56", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 625.033, "t": "10:25:02", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}, {"time": 625.071, "t": "10:25:04", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 625.296, "t": "10:25:18", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 625.423, "t": "10:25:25", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 625.529, "t": "10:25:32", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}, {"time": 625.695, "t": "10:25:42", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 625.835, "t": "10:25:50", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}, {"time": 625.93, "t": "10:25:56", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 626.078, "t": "10:26:05", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 626.248, "t": "10:26:15", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}, {"time": 626.311, "t": "10:26:19", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 626.501, "t": "10:26:30", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 626.584, "t": "10:26:35", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}, {"time": 626.61, "t": "10:26:37", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 626.914, "t": "10:26:55", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 626.999, "t": "10:27:00", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}, {"time": 627.089, "t": "10:27:05", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 627.228, "t": "10:27:14", "level": "INFO", "service": "checkout-api", "msg": "GET /healthz 200 3ms"}, {"time": 627.245, "t": "10:27:15", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 627.366, "t": "10:27:22", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}, {"time": 627.405, "t": "10:27:24", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 627.73, "t": "10:27:44", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 627.745, "t": "10:27:45", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}, {"time": 627.871, "t": "10:27:52", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 628.108, "t": "10:28:06", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 628.165, "t": "10:28:10", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}, {"time": 628.332, "t": "10:28:20", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 628.507, "t": "10:28:30", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 628.549, "t": "10:28:33", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}, {"time": 628.738, "t": "10:28:44", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 628.859, "t": "10:28:52", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 628.982, "t": "10:28:59", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}, {"time": 629.12, "t": "10:29:07", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 629.267, "t": "10:29:16", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 629.333, "t": "10:29:20", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}, {"time": 629.54, "t": "10:29:32", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 629.732, "t": "10:29:44", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 629.755, "t": "10:29:45", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}, {"time": 629.815, "t": "10:29:49", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 630.02, "t": "10:30:01", "level": "ERROR", "service": "checkout-api", "msg": "HikariPool-1 - Connection is not available, request timed out after 30000ms"}, {"time": 630.107, "t": "10:30:06", "level": "INFO", "service": "checkout-api", "msg": "GET /healthz 200 3ms"}, {"time": 630.128, "t": "10:30:08", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 500 Internal Server Error"}], "k8s": [{"time": 627.0, "t": "10:27:00", "type": "Warning", "service": "checkout-api", "msg": "Readiness probe failed: HTTP 503 (pods checkout-api-7f9c8d-*)"}, {"time": 627.5, "t": "10:27:30", "type": "Warning", "service": "checkout-api", "msg": "Back-off restarting failed container"}], "chart": [{"service": "orders-db", "metric": "db_connections", "label": "DB connections", "color": "#8d63f5"}, {"service": "checkout-api", "metric": "latency_p95_ms", "label": "API latency p95", "color": "#ffb224"}, {"service": "checkout-api", "metric": "error_rate_5xx", "label": "HTTP 5xx rate", "color": "#ff4a5c"}], "window": [600, 632], "kube": {"cluster": "aks-prod-eastus", "namespace": "prod", "pods": [{"name": "checkout-api-7f9c8d-4k2xp", "ready": "0/1", "status": "CrashLoopBackOff", "restarts": 9, "age": "12m"}, {"name": "checkout-api-7f9c8d-9q7ld", "ready": "0/1", "status": "Running", "restarts": 7, "age": "12m"}, {"name": "checkout-api-7f9c8d-x2m5v", "ready": "1/1", "status": "Running", "restarts": 2, "age": "12m"}, {"name": "payment-svc-6d8b7f-c4t9w", "ready": "1/1", "status": "Running", "restarts": 0, "age": "3d"}, {"name": "api-gateway-5b6c9d-h8j2k", "ready": "1/1", "status": "Running", "restarts": 0, "age": "5d"}], "more": 0, "rollouts": [{"rev": 12, "image": "checkout-api:2.8.1", "time": "10:15", "status": "Degraded (1/3 ready)", "bad": true}, {"rev": 11, "image": "checkout-api:2.8.0", "time": "09:20", "status": "Superseded", "bad": false}], "events": [{"time": 615.0, "t": "10:15:00", "type": "Normal", "reason": "ScalingReplicaSet", "object": "deployment/checkout-api", "msg": "Scaled up replica set checkout-api-7f9c8d to 3"}, {"time": 615.7, "t": "10:15:42", "type": "Normal", "reason": "Started", "object": "pod/checkout-api-7f9c8d-4k2xp", "msg": "Started container checkout-api"}, {"time": 627.0, "t": "10:27:00", "type": "Warning", "reason": "Unhealthy", "object": "pod/checkout-api-7f9c8d-9q7ld", "msg": "Readiness probe failed: HTTP probe failed with statuscode: 503"}, {"time": 627.5, "t": "10:27:30", "type": "Warning", "reason": "BackOff", "object": "pod/checkout-api-7f9c8d-4k2xp", "msg": "Back-off restarting failed container"}]}, "t0": 570}, "oom": {"id": "oom", "title": "Payments failing with restarts", "incident": "Incident #1043", "sev": "SEV-2", "service": "payment-svc", "summary_hint": "payment-svc pods restart repeatedly from 10:14", "graph": {"ingress": ["api-gateway"], "api-gateway": ["checkout-api"], "checkout-api": ["payment-svc", "orders-db"], "payment-svc": [], "orders-db": [], "marketing-site": []}, "meta": {"ingress": "edge", "api-gateway": "gateway", "checkout-api": "service", "payment-svc": "service", "orders-db": "database", "marketing-site": "web"}, "changes": [{"id": "docs-api", "type": "commit", "service": "checkout-api", "time": 602, "t": "10:02", "title": "docs: api examples", "detail": "Markdown only", "diff": "+ example request", "author": "l.novak", "commits": [], "docs_only": true}, {"id": "mkt-5.3.1", "type": "deploy", "service": "marketing-site", "time": 603, "t": "10:03", "title": "Deployment v5.3.1", "detail": "Banner copy", "diff": "", "author": "azure-pipelines", "commits": [], "docs_only": false}, {"id": "helm-mem", "type": "infra", "service": "payment-svc", "time": 605, "t": "10:05", "title": "Helm values: memory limit reduced", "detail": "Cost optimisation ticket FIN-212", "diff": "--- a/charts/payment-svc/values.yaml\n+++ b/charts/payment-svc/values.yaml\n resources:\n   limits:\n-    memory: 1Gi\n+    memory: 512Mi", "author": "d.shah", "commits": [], "docs_only": false}, {"id": "e11b2f0", "type": "commit", "service": "payment-svc", "time": 607, "t": "10:07", "title": "feat: in-memory fraud rules cache", "detail": "Adds local cache for fraud rules", "diff": "+ cache.maximumSize=500000\n+ cache.expireAfterWrite=24h", "author": "a.khan", "commits": [], "docs_only": false}, {"id": "deploy-3.1.0", "type": "deploy", "service": "payment-svc", "time": 608, "t": "10:08", "title": "Deployment v3.1.0", "detail": "Azure Pipelines run #1190", "diff": "", "author": "azure-pipelines", "commits": ["e11b2f0"], "docs_only": false}], "metrics": {"payment-svc": {"memory_pct": [56.7, 57.9, 53.3, 53.1, 55.8, 58.8, 55.9, 52.5, 53.4, 54.9, 57.1, 55.0, 54.3, 54.6, 55.4, 53.5, 55.1, 55.6, 58.6, 54.9, 57.2, 52.8, 56.9, 55.4, 53.9, 55.0, 57.0, 54.4, 57.3, 58.4, 58.6, 58.6, 52.3, 55.8, 53.6, 57.1, 55.2, 55.6, 56.1, 53.8, 55.3, 53.5, 71.0, 86.7, 99.1, 95.3, 95.9, 97.3, 100.8, 100.7, 99.7, 97.7, 103.1, 96.9, 97.2, 100.1, 96.9, 99.7, 101.2, 98.9, 100.0, 99.2, 97.6, 92.2, 96.4, 99.1], "pod_restarts": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 7.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0], "latency_p95_ms": [100.8, 84.5, 91.6, 88.7, 85.6, 87.1, 87.4, 89.5, 91.9, 95.1, 91.0, 95.4, 92.1, 90.3, 88.7, 84.9, 81.9, 89.4, 88.9, 91.3, 91.4, 83.5, 86.2, 84.2, 94.7, 89.1, 90.3, 85.2, 83.4, 86.8, 89.2, 91.9, 82.2, 91.3, 85.4, 87.1, 88.0, 87.5, 91.9, 94.0, 91.3, 87.0, 91.7, 91.5, 93.9, 91.0, 784.3, 2093.3, 2797.7, 2804.2, 2799.0, 2804.1, 2801.1, 2793.8, 2799.9, 2802.4, 2801.7, 2792.3, 2801.7, 2796.8, 2789.3, 2796.8, 2789.9, 2793.4, 2806.7, 2811.8]}, "checkout-api": {"latency_p95_ms": [116.9, 107.0, 130.3, 142.8, 123.6, 129.8, 129.9, 126.4, 126.4, 128.9, 118.1, 108.2, 106.9, 125.1, 123.5, 119.7, 102.5, 118.1, 119.5, 112.4, 114.2, 136.3, 130.2, 126.0, 122.3, 116.6, 117.2, 125.3, 113.5, 118.3, 132.5, 110.1, 114.0, 133.6, 122.9, 121.3, 113.6, 109.2, 129.2, 100.3, 123.5, 115.7, 119.3, 104.1, 126.8, 124.5, 122.2, 123.2, 856.3, 2254.7, 3003.7, 2999.4, 2975.9, 2999.2, 3000.8, 2991.4, 3000.5, 3009.9, 2999.3, 3010.0, 2995.9, 2994.4, 3002.0, 2993.2, 2987.0, 3002.6], "error_rate_5xx": [0.27, 0.53, 0.43, 0.35, 0.48, 0.32, 0.59, 0.45, 0.4, 0.47, 0.31, 0.45, 0.49, 0.49, 0.45, 0.32, 0.43, 0.29, 0.42, 0.35, 0.34, 0.47, 0.57, 0.53, 0.38, 0.37, 0.33, 0.36, 0.42, 0.44, 0.37, 0.41, 0.31, 0.36, 0.51, 0.52, 0.45, 0.41, 0.42, 0.35, 0.31, 0.45, 0.31, 0.44, 0.31, 0.4, 0.54, 0.45, 0.39, 12.72, 24.88, 25.08, 24.94, 24.94, 24.94, 25.01, 24.95, 24.95, 25.04, 25.02, 25.1, 25.07, 25.1, 24.91, 25.01, 25.04]}, "api-gateway": {"error_rate_5xx": [0.2, 0.17, 0.22, 0.27, 0.28, 0.23, 0.2, 0.19, 0.18, 0.15, 0.12, 0.11, 0.25, 0.2, 0.25, 0.13, 0.21, 0.2, 0.23, 0.19, 0.25, 0.25, 0.27, 0.09, 0.14, 0.27, 0.33, 0.23, 0.18, 0.26, 0.21, 0.21, 0.27, 0.2, 0.11, 0.17, 0.23, 0.16, 0.22, 0.17, 0.23, 0.17, 0.25, 0.18, 0.15, 0.23, 0.22, 0.21, 0.12, 0.18, 0.25, 8.11, 15.94, 16.06, 16.02, 16.0, 15.98, 15.99, 16.03, 15.88, 15.98, 15.94, 16.02, 16.01, 16.0, 16.02]}, "orders-db": {"db_connections": [30.0, 29.0, 32.0, 31.0, 34.0, 32.0, 30.0, 32.0, 31.0, 30.0, 33.0, 30.0, 34.0, 33.0, 30.0, 31.0, 32.0, 29.0, 31.0, 29.0, 31.0, 31.0, 33.0, 31.0, 31.0, 33.0, 30.0, 33.0, 30.0, 29.0, 32.0, 32.0, 30.0, 34.0, 34.0, 30.0, 30.0, 31.0, 31.0, 30.0, 32.0, 31.0, 31.0, 31.0, 31.0, 30.0, 30.0, 30.0, 30.0, 33.0, 32.0, 30.0, 29.0, 33.0, 32.0, 32.0, 29.0, 31.0, 32.0, 33.0, 30.0, 31.0, 31.0, 31.0, 31.0, 32.0]}, "marketing-site": {"latency_p95_ms": [71.6, 71.4, 67.9, 68.6, 73.0, 73.3, 67.6, 71.4, 64.0, 74.8, 71.8, 71.9, 72.9, 70.5, 79.6, 76.5, 65.3, 81.0, 76.0, 76.3, 63.9, 69.8, 68.3, 67.3, 70.7, 76.0, 70.4, 70.5, 70.7, 64.4, 69.7, 74.8, 72.7, 68.3, 73.0, 72.9, 71.9, 73.3, 76.7, 71.4, 71.3, 66.4, 67.8, 72.1, 77.9, 67.7, 68.7, 67.9, 73.2, 76.0, 72.3, 75.7, 69.1, 70.5, 72.9, 78.4, 67.4, 75.4, 70.3, 66.0, 62.1, 70.0, 69.3, 65.2, 65.8, 68.8]}}, "logs": [{"time": 613.093, "t": "10:13:06", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 613.85, "t": "10:13:51", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 614.598, "t": "10:14:36", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 615.359, "t": "10:15:22", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 616.068, "t": "10:16:04", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 616.834, "t": "10:16:50", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 617.093, "t": "10:17:06", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 617.439, "t": "10:17:26", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 617.703, "t": "10:17:42", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 618.244, "t": "10:18:15", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 618.369, "t": "10:18:22", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 619.055, "t": "10:19:03", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 619.183, "t": "10:19:11", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 619.75, "t": "10:19:45", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 619.768, "t": "10:19:46", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 620.022, "t": "10:20:01", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 502 Bad Gateway"}, {"time": 620.453, "t": "10:20:27", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 620.526, "t": "10:20:32", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 621.121, "t": "10:21:07", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 502 Bad Gateway"}, {"time": 621.147, "t": "10:21:09", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 621.253, "t": "10:21:15", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 621.92, "t": "10:21:55", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 621.94, "t": "10:21:56", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 622.267, "t": "10:22:16", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 502 Bad Gateway"}, {"time": 622.517, "t": "10:22:31", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 622.646, "t": "10:22:39", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 623.302, "t": "10:23:18", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 623.424, "t": "10:23:25", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 502 Bad Gateway"}, {"time": 623.429, "t": "10:23:26", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 623.923, "t": "10:23:55", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 624.173, "t": "10:24:10", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 624.445, "t": "10:24:27", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 502 Bad Gateway"}, {"time": 624.628, "t": "10:24:38", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 624.828, "t": "10:24:50", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 625.241, "t": "10:25:14", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 625.598, "t": "10:25:36", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 625.657, "t": "10:25:39", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 502 Bad Gateway"}, {"time": 626.036, "t": "10:26:02", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 626.346, "t": "10:26:21", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 626.683, "t": "10:26:41", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 626.717, "t": "10:26:43", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 502 Bad Gateway"}, {"time": 627.181, "t": "10:27:11", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 627.408, "t": "10:27:24", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 627.824, "t": "10:27:49", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 502 Bad Gateway"}, {"time": 627.897, "t": "10:27:54", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 628.081, "t": "10:28:05", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 628.546, "t": "10:28:33", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 628.676, "t": "10:28:41", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 629.012, "t": "10:29:01", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 502 Bad Gateway"}, {"time": 629.37, "t": "10:29:22", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 629.38, "t": "10:29:23", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 630.021, "t": "10:30:01", "level": "ERROR", "service": "payment-svc", "msg": "java.lang.OutOfMemoryError: Java heap space"}, {"time": 630.025, "t": "10:30:01", "level": "ERROR", "service": "checkout-api", "msg": "payment-svc call failed: upstream request timeout"}, {"time": 630.072, "t": "10:30:04", "level": "ERROR", "service": "checkout-api", "msg": "POST /v2/checkout 502 Bad Gateway"}], "k8s": [{"time": 614.0, "t": "10:14:00", "type": "Warning", "service": "payment-svc", "msg": "OOMKilled: container payment (pod payment-svc-5c7b9-m8n2q)"}, {"time": 615.7, "t": "10:15:42", "type": "Warning", "service": "payment-svc", "msg": "OOMKilled: container payment (pod payment-svc-5c7b9-k3p0d)"}, {"time": 617.4, "t": "10:17:24", "type": "Warning", "service": "payment-svc", "msg": "OOMKilled: container payment (pod payment-svc-5c7b9-t5r7w)"}, {"time": 619.1, "t": "10:19:06", "type": "Warning", "service": "payment-svc", "msg": "OOMKilled: container payment (pod payment-svc-5c7b9-b7c2n)"}], "chart": [{"service": "payment-svc", "metric": "memory_pct", "label": "payment-svc memory", "color": "#8d63f5"}, {"service": "payment-svc", "metric": "latency_p95_ms", "label": "payment latency p95", "color": "#ffb224"}, {"service": "checkout-api", "metric": "error_rate_5xx", "label": "checkout 5xx rate", "color": "#ff4a5c"}], "window": [600, 632], "kube": {"cluster": "aks-prod-eastus", "namespace": "prod", "pods": [{"name": "payment-svc-5c7b9-m8n2q", "ready": "0/1", "status": "OOMKilled", "restarts": 4, "age": "25m"}, {"name": "payment-svc-5c7b9-k3p0d", "ready": "0/1", "status": "CrashLoopBackOff", "restarts": 4, "age": "25m"}, {"name": "payment-svc-5c7b9-t5r7w", "ready": "1/1", "status": "Running", "restarts": 3, "age": "25m"}, {"name": "payment-svc-5c7b9-b7c2n", "ready": "0/1", "status": "OOMKilled", "restarts": 3, "age": "25m"}, {"name": "checkout-api-6a1e4-p2d8s", "ready": "1/1", "status": "Running", "restarts": 0, "age": "2d"}], "more": 0, "rollouts": [{"rev": 8, "image": "payment-svc:3.1.0", "time": "10:08", "status": "Degraded (1/4 ready)", "bad": true}, {"rev": 7, "image": "payment-svc:3.0.9", "time": "3d ago", "status": "Superseded", "bad": false}], "events": [{"time": 605.0, "t": "10:05:00", "type": "Normal", "reason": "SuccessfulCreate", "object": "helm/payment-svc", "msg": "Release upgraded: resources.limits.memory 1Gi to 512Mi"}, {"time": 608.0, "t": "10:08:00", "type": "Normal", "reason": "ScalingReplicaSet", "object": "deployment/payment-svc", "msg": "Scaled up replica set payment-svc-5c7b9 to 4"}, {"time": 614.0, "t": "10:14:00", "type": "Warning", "reason": "OOMKilled", "object": "pod/payment-svc-5c7b9-m8n2q", "msg": "Container payment exceeded its memory limit (512Mi)"}, {"time": 617.0, "t": "10:17:00", "type": "Warning", "reason": "OOMKilled", "object": "pod/payment-svc-5c7b9-b7c2n", "msg": "Container payment exceeded its memory limit (512Mi)"}, {"time": 619.0, "t": "10:19:00", "type": "Warning", "reason": "BackOff", "object": "pod/payment-svc-5c7b9-k3p0d", "msg": "Back-off restarting failed container"}]}, "t0": 570}, "traffic": {"id": "traffic", "title": "Slowdown with no recent change", "incident": "Incident #1044", "sev": "SEV-3", "service": "checkout-api", "summary_hint": "Latency rises from 10:19; nothing was deployed", "graph": {"ingress": ["api-gateway"], "api-gateway": ["checkout-api"], "checkout-api": ["payment-svc", "orders-db"], "payment-svc": [], "orders-db": [], "marketing-site": []}, "meta": {"ingress": "edge", "api-gateway": "gateway", "checkout-api": "service", "payment-svc": "service", "orders-db": "database", "marketing-site": "web"}, "changes": [{"id": "docs-onboard", "type": "commit", "service": "checkout-api", "time": 530, "t": "08:50", "title": "docs: onboarding guide", "detail": "Markdown only", "diff": "+ ## Getting started", "author": "l.novak", "commits": [], "docs_only": true}, {"id": "mkt-5.3.2", "type": "deploy", "service": "marketing-site", "time": 580, "t": "09:40", "title": "Deployment v5.3.2", "detail": "Landing page update", "diff": "", "author": "azure-pipelines", "commits": [], "docs_only": false}], "metrics": {"api-gateway": {"requests_per_sec": [817.0, 801.0, 758.0, 833.0, 811.0, 813.0, 807.0, 859.0, 835.0, 846.0, 790.0, 784.0, 763.0, 792.0, 700.0, 861.0, 806.0, 804.0, 833.0, 787.0, 810.0, 830.0, 742.0, 865.0, 806.0, 824.0, 762.0, 778.0, 864.0, 781.0, 785.0, 819.0, 854.0, 710.0, 856.0, 811.0, 834.0, 763.0, 812.0, 861.0, 797.0, 777.0, 784.0, 781.0, 831.0, 1183.0, 1982.0, 2855.0, 3160.0, 3147.0, 3293.0, 3177.0, 3262.0, 3197.0, 3192.0, 3220.0, 3169.0, 3169.0, 3193.0, 3186.0, 3228.0, 3274.0, 3157.0, 3168.0, 3229.0, 3220.0], "error_rate_5xx": [0.23, 0.22, 0.16, 0.3, 0.12, 0.2, 0.25, 0.24, 0.23, 0.15, 0.3, 0.16, 0.2, 0.2, 0.2, 0.17, 0.28, 0.2, 0.25, 0.12, 0.23, 0.19, 0.22, 0.21, 0.22, 0.2, 0.21, 0.21, 0.21, 0.2, 0.18, 0.22, 0.16, 0.31, 0.25, 0.28, 0.2, 0.14, 0.12, 0.16, 0.17, 0.18, 0.18, 0.23, 0.08, 0.29, 0.18, 0.21, 0.11, 0.21, 0.13, 0.23, 0.22, 3.61, 6.99, 6.99, 6.98, 7.05, 7.0, 7.01, 7.12, 7.01, 6.95, 6.89, 6.88, 7.01]}, "checkout-api": {"cpu_pct": [32.4, 33.8, 35.7, 33.5, 32.6, 31.6, 36.1, 34.3, 33.4, 32.7, 29.8, 34.9, 32.9, 34.6, 37.7, 34.0, 34.5, 36.6, 34.3, 35.0, 32.5, 33.0, 31.5, 36.7, 37.3, 33.9, 34.6, 34.1, 40.3, 36.9, 34.7, 36.4, 37.7, 33.0, 36.3, 36.2, 35.1, 36.6, 37.4, 35.1, 34.3, 36.9, 35.4, 35.9, 39.0, 35.8, 51.0, 78.4, 97.8, 97.8, 98.3, 98.2, 98.5, 97.6, 97.4, 98.3, 95.7, 95.2, 95.1, 97.3, 93.6, 96.1, 96.7, 97.7, 95.1, 97.2], "latency_p95_ms": [110.9, 118.3, 128.3, 107.5, 124.9, 115.5, 127.0, 117.7, 118.9, 122.9, 116.0, 119.7, 118.5, 129.5, 121.9, 108.5, 122.1, 121.3, 119.7, 128.9, 126.7, 109.3, 128.5, 116.2, 116.2, 115.6, 118.1, 124.4, 110.7, 117.9, 113.7, 116.9, 115.3, 122.4, 123.7, 111.5, 119.9, 107.2, 119.3, 123.4, 116.9, 134.9, 121.8, 113.1, 121.1, 113.7, 122.0, 117.7, 118.9, 536.0, 1357.6, 1803.8, 1803.8, 1804.1, 1800.6, 1805.8, 1805.4, 1802.5, 1806.8, 1805.2, 1795.8, 1802.8, 1805.6, 1797.9, 1785.4, 1797.1]}, "orders-db": {"db_connections": [28.0, 30.0, 31.0, 28.0, 30.0, 35.0, 29.0, 30.0, 31.0, 27.0, 31.0, 33.0, 31.0, 29.0, 31.0, 29.0, 31.0, 31.0, 31.0, 29.0, 33.0, 31.0, 32.0, 31.0, 31.0, 32.0, 31.0, 32.0, 31.0, 30.0, 31.0, 32.0, 33.0, 30.0, 33.0, 27.0, 29.0, 31.0, 30.0, 32.0, 28.0, 29.0, 28.0, 31.0, 33.0, 29.0, 30.0, 29.0, 32.0, 32.0, 32.0, 30.0, 30.0, 30.0, 30.0, 30.0, 32.0, 28.0, 33.0, 31.0, 34.0, 33.0, 31.0, 32.0, 33.0, 30.0]}, "payment-svc": {"latency_p95_ms": [83.2, 102.6, 100.8, 87.2, 92.5, 80.1, 97.0, 90.0, 90.1, 98.1, 84.2, 92.6, 83.7, 88.3, 96.6, 77.5, 84.9, 97.5, 93.8, 86.8, 94.2, 94.1, 90.6, 83.9, 93.1, 97.2, 85.3, 99.3, 93.3, 95.9, 79.1, 99.5, 96.6, 97.9, 85.8, 92.4, 91.5, 95.6, 107.3, 81.8, 96.4, 87.5, 90.5, 95.9, 87.5, 86.6, 92.1, 89.8, 90.3, 93.4, 90.9, 91.6, 90.3, 94.8, 95.8, 87.7, 86.7, 86.7, 93.1, 95.6, 89.7, 87.9, 88.0, 87.2, 88.3, 85.6]}, "marketing-site": {"latency_p95_ms": [69.3, 68.4, 64.3, 64.8, 72.4, 65.9, 67.4, 67.2, 68.1, 69.7, 67.8, 65.1, 69.2, 73.8, 69.6, 65.7, 80.3, 67.3, 70.9, 68.5, 72.9, 71.5, 66.0, 74.8, 72.4, 65.4, 66.7, 66.0, 74.8, 71.0, 71.0, 74.0, 75.8, 70.3, 71.3, 69.2, 69.2, 69.6, 68.6, 71.9, 74.1, 65.0, 72.2, 68.3, 68.8, 63.9, 61.1, 69.4, 67.7, 67.7, 69.1, 65.5, 71.3, 75.4, 74.2, 71.3, 69.7, 69.9, 69.0, 68.6, 67.8, 67.0, 85.0, 72.8, 72.1, 70.9]}}, "logs": [{"time": 620.069, "t": "10:20:04", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 620.644, "t": "10:20:39", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 621.197, "t": "10:21:12", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 621.895, "t": "10:21:54", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 622.354, "t": "10:22:21", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 623.017, "t": "10:23:01", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 623.076, "t": "10:23:05", "level": "ERROR", "service": "checkout-api", "msg": "request queue full, rejecting request"}, {"time": 623.664, "t": "10:23:40", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 623.775, "t": "10:23:46", "level": "ERROR", "service": "checkout-api", "msg": "request queue full, rejecting request"}, {"time": 624.13, "t": "10:24:08", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 624.361, "t": "10:24:22", "level": "ERROR", "service": "checkout-api", "msg": "request queue full, rejecting request"}, {"time": 624.789, "t": "10:24:47", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 625.025, "t": "10:25:02", "level": "ERROR", "service": "checkout-api", "msg": "request queue full, rejecting request"}, {"time": 625.387, "t": "10:25:23", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 625.603, "t": "10:25:36", "level": "ERROR", "service": "checkout-api", "msg": "request queue full, rejecting request"}, {"time": 625.888, "t": "10:25:53", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 626.294, "t": "10:26:18", "level": "ERROR", "service": "checkout-api", "msg": "request queue full, rejecting request"}, {"time": 626.527, "t": "10:26:32", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 626.833, "t": "10:26:50", "level": "ERROR", "service": "checkout-api", "msg": "request queue full, rejecting request"}, {"time": 627.164, "t": "10:27:10", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 627.498, "t": "10:27:30", "level": "ERROR", "service": "checkout-api", "msg": "request queue full, rejecting request"}, {"time": 627.715, "t": "10:27:43", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 628.192, "t": "10:28:12", "level": "ERROR", "service": "checkout-api", "msg": "request queue full, rejecting request"}, {"time": 628.344, "t": "10:28:21", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 628.836, "t": "10:28:50", "level": "ERROR", "service": "checkout-api", "msg": "request queue full, rejecting request"}, {"time": 628.847, "t": "10:28:51", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 629.427, "t": "10:29:26", "level": "ERROR", "service": "checkout-api", "msg": "request queue full, rejecting request"}, {"time": 629.447, "t": "10:29:27", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}, {"time": 630.013, "t": "10:30:01", "level": "ERROR", "service": "checkout-api", "msg": "request queue full, rejecting request"}, {"time": 630.017, "t": "10:30:01", "level": "WARN", "service": "api-gateway", "msg": "rate limiter: 429 returned to tenant bulk-importer"}], "k8s": [{"time": 620.0, "t": "10:20:00", "type": "Warning", "service": "checkout-api", "msg": "HorizontalPodAutoscaler: maximum replicas reached (12/12)"}], "chart": [{"service": "api-gateway", "metric": "requests_per_sec", "label": "Requests / sec", "color": "#4d8dff"}, {"service": "checkout-api", "metric": "cpu_pct", "label": "checkout CPU", "color": "#8d63f5"}, {"service": "checkout-api", "metric": "latency_p95_ms", "label": "API latency p95", "color": "#ffb224"}], "window": [600, 632], "kube": {"cluster": "aks-prod-eastus", "namespace": "prod", "pods": [{"name": "checkout-api-4d9f6c-a1b2c", "ready": "1/1", "status": "Running", "restarts": 0, "age": "9d"}, {"name": "checkout-api-4d9f6c-d3e4f", "ready": "1/1", "status": "Running", "restarts": 0, "age": "9d"}, {"name": "checkout-api-4d9f6c-g5h6i", "ready": "1/1", "status": "Running", "restarts": 0, "age": "11m"}, {"name": "checkout-api-4d9f6c-j7k8l", "ready": "1/1", "status": "Running", "restarts": 0, "age": "11m"}, {"name": "checkout-api-4d9f6c-m9n0o", "ready": "1/1", "status": "Running", "restarts": 0, "age": "10m"}], "more": 7, "rollouts": [{"rev": 31, "image": "checkout-api:2.7.9", "time": "9d ago", "status": "Healthy (no recent rollout)", "bad": false}], "events": [{"time": 616.0, "t": "10:16:00", "type": "Normal", "reason": "SuccessfulRescale", "object": "hpa/checkout-api", "msg": "New size: 8; reason: cpu resource utilization above target"}, {"time": 618.0, "t": "10:18:00", "type": "Normal", "reason": "SuccessfulRescale", "object": "hpa/checkout-api", "msg": "New size: 12; reason: cpu resource utilization above target"}, {"time": 620.0, "t": "10:20:00", "type": "Warning", "reason": "FailedRescale", "object": "hpa/checkout-api", "msg": "Maximum replicas reached (12/12)"}]}, "t0": 570}};
+// Sleuth engine in JavaScript: same logic as engine.py, remediation.py, risk.py and llm.offline_answer.
+const SleuthEngine = (() => {
+  const METRIC_LABEL = {
+    latency_p95_ms: ["P95 latency", "ms"], error_rate_5xx: ["HTTP 5xx rate", "%"], pod_restarts: ["Pod restarts", ""],
+    db_connections: ["DB connections", ""], db_cpu_pct: ["DB CPU", "%"], memory_pct: ["Memory usage", "%"],
+    cpu_pct: ["CPU usage", "%"], requests_per_sec: ["Requests per second", "/s"],
+  };
+  const KEYWORDS = {
+    db_connections: ["pool", "connection", "max_connections", "datasource", "hikari"],
+    db_cpu_pct: ["query", "index", "pool", "connection"],
+    memory_pct: ["memory", "heap", "xmx", "cache", "limit", "oom"],
+    pod_restarts: ["memory", "limit", "probe", "readiness", "oom", "heap", "cache"],
+    latency_p95_ms: ["timeout", "retry", "pool", "query", "index", "cache", "connection"],
+    cpu_pct: ["thread", "loop", "replicas", "autoscal"], error_rate_5xx: [], requests_per_sec: [],
+  };
+  const ABS_FLOOR = { pod_restarts: 1.0, latency_p95_ms: 20.0, error_rate_5xx: 0.5 };
+  const TYPE_WEIGHT = { deploy: 0.8, config: 0.9, infra: 0.9, flag: 0.8, commit: 0.5 };
+  const WEIGHTS = { temporal: 0.28, topology: 0.17, type: 0.12, semantic: 0.28, coverage: 0.15 };
+  const SHOW_MIN = 0.30;
+
+  const r1 = x => Math.round(x * 10) / 10, r2 = x => Math.round(x * 100) / 100;
+  const hm = m => { m = ((Math.floor(m) % 1440) + 1440) % 1440; return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); };
+  const fmt = v => Math.abs(v) >= 10 ? Math.round(v).toLocaleString("en-US") : String(Number(v.toPrecision(6)));
+  const labelFor = s => s >= 0.75 ? "Strong correlation" : s >= 0.5 ? "Moderate correlation" : "Weak correlation";
+
+  function undirected(graph) {
+    const adj = {};
+    for (const [a, bs] of Object.entries(graph)) { adj[a] = adj[a] || new Set(); for (const b of bs) { adj[a].add(b); (adj[b] = adj[b] || new Set()).add(a); } }
+    return adj;
+  }
+  function distances(adj, src) {
+    const d = { [src]: 0 }, q = [src];
+    while (q.length) { const u = q.shift(); for (const v of (adj[u] || [])) if (!(v in d)) { d[v] = d[u] + 1; q.push(v); } }
+    return d;
+  }
+
+  function detectAnomalies(s) {
+    const out = [];
+    for (const [svc, mm] of Object.entries(s.metrics)) for (const [metric, ser] of Object.entries(mm)) {
+      const bp = Math.min(s.baseline_points || 30, ser.length - 3);
+      if (bp < 3) continue;
+      const base = ser.slice(0, bp), mean = base.reduce((a, b) => a + b, 0) / bp;
+      const std = Math.sqrt(base.reduce((a, x) => a + (x - mean) ** 2, 0) / bp);
+      const thr = Math.max(5 * std, 0.35 * Math.abs(mean), ABS_FLOOR[metric] || 0);
+      let onset = null;
+      for (let i = bp; i < ser.length - 1; i++) if (Math.abs(ser[i] - mean) > thr && Math.abs(ser[i + 1] - mean) > thr) { onset = s.t0 + i; break; }
+      if (onset === null) continue;
+      const peak = Math.max(...ser), [label, unit] = METRIC_LABEL[metric] || [metric, ""];
+      out.push({ service: svc, metric, label, unit, onset, t: hm(onset), baseline: r2(mean), peak: r2(peak), ratio: mean > 0.01 ? r1(peak / mean) : null });
+    }
+    return out.sort((a, b) => a.onset - b.onset);
+  }
+
+  function steps(metrics, c) {
+    const m = new Set(metrics), svc = c.service;
+    if (m.has("db_connections") || m.has("db_cpu_pct")) return [
+      `Diff configuration between the previous and current version of ${svc} (focus on connection pool settings)`,
+      "Inspect database connection count versus max_connections and pool metrics on the affected database",
+      `Review rollback or hotfix options for ${c.title}`];
+    if (m.has("memory_pct") || m.has("pod_restarts")) return [
+      `Compare memory limits and JVM heap settings before and after ${c.title}`,
+      `Check OOMKilled events and heap usage per pod on ${svc}`,
+      "Consider restoring the previous memory limit while the cache size is reviewed"];
+    return [`Compare behaviour of ${svc} before and after ${c.title}`,
+      "Review the change diff for settings that affect the anomalous metrics", "Check whether a rollback is safe and available"];
+  }
+
+  function invert(diff) {
+    return diff.split("\n").map(l => (l.startsWith("+++") || l.startsWith("---")) ? l : l[0] === "+" ? "-" + l.slice(1) : l[0] === "-" ? "+" + l.slice(1) : l).join("\n");
+  }
+  function draftRollback(change, bundle, all, anomalies) {
+    const svc = change.service, shipped = bundle.filter(b => b.diff.trim());
+    let action, title, reverse, side = [];
+    if (change.type === "deploy") {
+      const prevs = all.filter(c => c.type === "deploy" && c.service === svc && c.time < change.time);
+      const prev = prevs.length ? prevs.reduce((a, b) => b.time > a.time ? b : a) : null;
+      const target = prev ? prev.title.replace("Deployment ", "").replace(/^Release /, "") : null;
+      action = target ? `Redeploy ${target} of ${svc}` : `Redeploy the version of ${svc} before ${change.title}`;
+      title = `Revert: ${change.title} on ${svc}`;
+      reverse = shipped.map(b => `# revert ${b.id}: ${b.title}\n${invert(b.diff)}`).join("\n\n");
+      if (shipped.length) side.push(`Reverting also removes ${shipped.length} commit(s) shipped in this deploy: ${shipped.map(b => b.id).join(", ")}.`);
+      const docs = all.filter(c => change.commits.includes(c.id) && c.docs_only);
+      if (docs.length) side.push("Documentation-only commit(s) in the same deploy would also be rolled back: " + docs.map(d => d.id).join(", ") + ".");
+    } else {
+      action = `Revert ${change.title} on ${svc}`; title = `Revert: ${change.title}`;
+      reverse = change.diff.trim() ? invert(change.diff) : "";
+    }
+    const watch = [], seen = new Set();
+    for (const a of anomalies) { const k = a.service + "|" + a.metric; if (seen.has(k)) continue; seen.add(k); watch.push(`${a.label} on ${a.service} should return towards its baseline of about ${Number(a.baseline.toPrecision(6))}${a.unit}`); }
+    return {
+      status: "DRAFT", approval: "Requires engineer approval. Sleuth never applies changes.", title, action, reverse_diff: reverse,
+      side_effects: side.length ? side : ["Review what else shipped with this change before approving."], verify: watch.slice(0, 5),
+      pr_body: `## ${title}\n\n**Why:** Sleuth ranked this change as the strongest suspect for the current incident. This is a hypothesis, not a confirmed root cause.\n\n**Action:** ${action}\n\n**After merging, confirm:**\n` +
+        watch.slice(0, 5).map(w => `- ${w}`).join("\n") + "\n\n**If these signals do not recover**, the change is probably not the cause: close this PR and continue the investigation.\n",
+    };
+  }
+
+  function buildSummary(anomalies, hyps) {
+    if (!anomalies.length) return "No anomalies detected in the selected window.";
+    const f = anomalies[0];
+    const head = `The first anomaly was ${f.label} on ${f.service} at ${f.t}; ${new Set(anomalies.map(a => a.service)).size} services were affected.`;
+    if (!hyps.length) return head + " No recent change correlates strongly with it. Treat this as an unexplained anomaly (for example a traffic or capacity issue) and check non-change signals.";
+    const top = hyps[0];
+    let out = head + ` The strongest candidate is ${top.title} at ${top.t} (${top.label.toLowerCase()}, score ${top.score}). This is a hypothesis to validate, not a confirmed root cause.`;
+    if (hyps.length > 1 && hyps[1].score >= 0.6) out += ` ${hyps[1].title} is also plausible (${hyps[1].score}), so check both.`;
+    return out;
+  }
+
+  function analyze(s) {
+    const adj = undirected(s.graph), anomalies = detectAnomalies(s);
+    const anomSvcs = [...new Set(anomalies.map(a => a.service))].sort();
+    const byId = Object.fromEntries(s.changes.map(c => [c.id, c]));
+    const included = new Set(s.changes.filter(c => c.type === "deploy").flatMap(c => c.commits));
+    const hyps = [], ruled = [];
+    for (const c of s.changes) {
+      if (included.has(c.id)) continue;
+      const bundle = c.commits.filter(i => byId[i] && !byId[i].docs_only).map(i => byId[i]);
+      const text = [c.title, c.detail, c.diff, ...bundle.map(b => b.title + " " + b.diff)].join(" ").toLowerCase();
+      const dist = distances(adj, c.service), dd = x => (x in dist ? dist[x] : 99);
+      const rel = anomalies.filter(a => c.time <= a.onset && a.onset <= c.time + 60 && dd(a.service) <= 2);
+      if (!rel.length) { ruled.push({ id: c.id, title: c.title, service: c.service, t: c.t, reason: "No anomaly in this or a dependent service started after the change." }); continue; }
+      const lag = rel[0].onset - c.time, temporal = Math.exp(-lag / 12);
+      const topo = ({ 0: 1.0, 1: 0.75, 2: 0.4 })[Math.min(...rel.map(a => dd(a.service)))] ?? 0.1;
+      const typew = TYPE_WEIGHT[c.type] ?? 0.5;
+      const kws = [...new Set(rel.flatMap(a => KEYWORDS[a.metric] || []))].sort();
+      const hit = kws.filter(k => text.includes(k));
+      let sem = Math.min(1, hit.length / 2);
+      const matched = (s.logs || []).filter(lg => c.time <= lg.time && lg.time <= c.time + 60 && dd(lg.service) <= 1 && ["ERROR", "WARN"].includes(lg.level) && kws.some(k => lg.msg.toLowerCase().includes(k)));
+      if (matched.length) sem = Math.min(1, sem + 0.25);
+      const cov = anomSvcs.filter(x => dd(x) <= 2).length / Math.max(1, anomSvcs.length);
+      const comp = { temporal, topology: topo, type: typew, semantic: sem, coverage: cov };
+      let score = Object.keys(WEIGHTS).reduce((a, k) => a + WEIGHTS[k] * comp[k], 0);
+      score *= lag <= 20 ? 1 : Math.max(0.5, 1 - (lag - 20) / 40);
+      if (c.docs_only) score *= 0.2;
+      score = r2(score);
+      if (score < SHOW_MIN) { ruled.push({ id: c.id, title: c.title, service: c.service, t: c.t, score, reason: c.docs_only ? "Documentation-only change." : "Weak timing, topology or content match to the anomalies." }); continue; }
+      const ev = [], diffAll = [...bundle.map(b => b.diff), c.diff].join("\n").trim(), use = hit.length ? hit : kws;
+      for (const line of diffAll.split("\n")) {
+        if ((line[0] === "+" || line[0] === "-") && !line.startsWith("+++") && !line.startsWith("---") && use.some(k => line.toLowerCase().includes(k))) {
+          const src = (bundle.find(b => b.diff.includes(line)) || c).id;
+          ev.push(`Change in ${src}: ${line.slice(1).trim()} (${line[0] === "+" ? "added" : "removed"})`);
+        }
+      }
+      for (const a of rel) ev.push(a.ratio ? `${a.label} on ${a.service} rose from ${fmt(a.baseline)} to ${fmt(a.peak)}${a.unit} (x${a.ratio}), starting ${a.t}, ${a.onset - c.time} min after the change.`
+        : `${a.label} on ${a.service} rose to ${fmt(a.peak)}${a.unit}, starting ${a.t}.`);
+      if (matched.length) ev.push(`${matched.length} related warning/error log lines on ${matched[0].service} after the change; first at ${matched[0].t}: "${matched[0].msg.slice(0, 90)}"`);
+      hyps.push({
+        id: c.id, title: `${c.title} on ${c.service}`, service: c.service, type: c.type, time: c.time, t: c.t,
+        change_ids: [c.id, ...bundle.map(b => b.id)], score, label: labelFor(score),
+        components: Object.fromEntries(Object.entries(comp).map(([k, v]) => [k, r2(v)])), evidence: ev.slice(0, 6), diff: diffAll,
+        steps: steps(rel.map(a => a.metric), c), caveat: "Correlation is not proof of causation. Validate before acting.",
+        rollback: draftRollback(c, bundle, s.changes, rel),
+      });
+    }
+    hyps.sort((a, b) => b.score - a.score); hyps.forEach((h, i) => h.rank = i + 1);
+    const timeline = [];
+    for (const c of s.changes) timeline.push({ time: c.time, t: c.t, kind: "change", ref: c.id, service: c.service, title: c.title, ctype: c.type, docs_only: !!c.docs_only });
+    for (const a of anomalies) timeline.push({ time: a.onset, t: a.t, kind: "anomaly", ref: `${a.service}:${a.metric}`, service: a.service, title: `${a.label} anomaly on ${a.service}` });
+    for (const k of (s.k8s || []).slice(0, 2)) timeline.push({ time: k.time, t: k.t.slice(0, 5), kind: "event", ref: "k8s", service: k.service, title: k.msg.slice(0, 70) });
+    timeline.sort((a, b) => a.time - b.time);
+    const impacted = [], seen = new Set();
+    for (const a of anomalies) {
+      if (seen.has(a.service)) continue; seen.add(a.service);
+      const mets = anomalies.filter(x => x.service === a.service);
+      impacted.push({ service: a.service, since: a.t, status: mets.some(x => ["error_rate_5xx", "latency_p95_ms", "pod_restarts"].includes(x.metric)) ? "Degraded" : "Affected", signals: mets.map(x => x.label) });
+    }
+    const series = {};
+    for (const c of s.chart) series[`${c.service}:${c.metric}`] = s.metrics[c.service][c.metric];
+    return {
+      scenario: { id: s.id, title: s.title, incident: s.incident, sev: s.sev, service: s.service, summary_hint: s.summary_hint },
+      anomalies, hypotheses: hyps, ruled_out: ruled, timeline, impacted, changes: s.changes, chart: s.chart, window: s.window, series, t0: s.t0, kube: s.kube || null,
+      logs: (s.logs || []).slice(-40), k8s: s.k8s || [], summary: buildSummary(anomalies, hyps),
+    };
+  }
+
+  function rollup(analyses) {
+    const byType = {}, bySvc = {}, flagged = [];
+    for (const a of Object.values(analyses)) {
+      const shipped = new Set(a.changes.filter(c => c.type === "deploy").flatMap(c => c.commits));
+      const hyp = Object.fromEntries(a.hypotheses.map(h => [h.id, h]));
+      for (const c of a.changes) {
+        if (shipped.has(c.id) || c.docs_only) continue;
+        const h = hyp[c.id];
+        for (const [b, k] of [[byType, c.type], [bySvc, c.service]]) {
+          const r = b[k] = b[k] || { reviewed: 0, flagged: 0, top: 0 };
+          r.reviewed++; if (h) { r.flagged++; r.top = Math.max(r.top, h.score); }
+        }
+        if (h) flagged.push({ incident: a.scenario.incident, id: c.id, title: h.title, type: c.type, service: c.service, score: h.score, label: h.label });
+      }
+    }
+    const rows = d => Object.entries(d).map(([name, v]) => ({ name, ...v, rate: v.reviewed ? r2(v.flagged / v.reviewed) : 0 })).sort((a, b) => b.top - a.top || b.rate - a.rate);
+    return { incidents: Object.keys(analyses).length, by_type: rows(byType), by_service: rows(bySvc), flagged: flagged.sort((a, b) => b.score - a.score),
+      note: "Built from the incidents loaded in this session. Flagged means correlated, not proven." };
+  }
+
+  function offlineAnswer(q, a) {
+    const ql = q.toLowerCase(), hy = a.hypotheses, top = hy[0], byId = Object.fromEntries(a.changes.map(c => [c.id, c]));
+    const bl = arr => arr.map(x => "• " + x).join("\n"), K = a.kube;
+    const notReady = K ? K.pods.filter(p => !(p.status === "Running" && p.ready.split("/")[0] === p.ready.split("/")[1])) : [];
+    const intents = [
+      ["postmortem", /post-?mortem|\brca\b|incident report|write.?up|draft a report/],
+      ["who", /\bwho\b|author|committed|pushed|owner|deployed by/],
+      ["when", /\bwhen\b|timeline|sequence|how long|lag|how many minutes|order of events/],
+      ["rollback", /rollback|roll back|revert|fix|mitigat|resolve|\bnext\b|steps?\b|what should|what do we do|action/],
+      ["second", /second|alternative|runner|other suspect|also plausible|#2/],
+      ["ruled", /ruled|rule out|other change|unrelated|exclude|not the cause|innocent|marketing/],
+      ["prevent", /prevent|avoid|again|repeat|future|lesson|guardrail|canary/],
+      ["why", /\bwhy\b|evidence|proof|\bsure\b|confiden|how do you know|certain|score|trust|wrong|blame/],
+      ["kube", /\bpods?\b|kube|k8s|cluster|restart|oom|crash|rollout|hpa|replica|container/],
+      ["impact", /impact|affect|blast|customer|which services|\bdown\b/],
+      ["metric", /grafana|metric|graph|chart|latency|error rate|5xx|cpu|memory|connection|dashboard|signal|anomal/],
+      ["summary", /what happened|summar|overview|explain|tell me|status|going on|root cause|what.s wrong|\bhi\b|hello/],
+    ];
+    const intent = (intents.find(([, re]) => re.test(ql)) || [null])[0];
+    const first = a.anomalies[0];
+    const anomLines = () => a.anomalies.slice(0, 6).map(x => `${x.t} ${x.label} on ${x.service}: ${fmt(x.baseline)} to ${fmt(x.peak)}${x.unit}${x.ratio ? " (x" + x.ratio + ")" : ""}`);
+    const kubeText = () => {
+      if (!K) return "No Kubernetes data is loaded for this incident. Paste pod and event JSON in Integrations.";
+      const warn = K.events.filter(e => e.type === "Warning").slice(-3).map(e => `${e.t.slice(0, 5)} ${e.reason} on ${e.object}: ${e.msg}`);
+      const bad = K.rollouts.filter(r => r.bad).map(r => `Rollout revision ${r.rev} (${r.image}) at ${r.time}: ${r.status}`);
+      return (notReady.length ? `${notReady.length} of ${K.pods.length + (K.more || 0)} pods are unhealthy: ` + notReady.map(p => `${p.name} (${p.status}, ${p.restarts} restarts)`).join("; ") + "." : "All listed pods are Running and ready.")
+        + (bad.length ? "\n" + bl(bad) : "") + (warn.length ? "\nRecent warnings:\n" + bl(warn) : "") + (top && K.rollouts.some(r => r.time === top.t) ? `\nThe rollout at ${top.t} lines up with the top suspect.` : "");
+    };
+    if (!hy.length) {
+      const base = "No recent change correlates strongly with this incident, so I would not blame a deployment.";
+      const checks = "Check traffic and capacity (autoscaler limits, rate limiting) and upstream dependencies next.";
+      switch (intent) {
+        case "kube": return kubeText();
+        case "metric": case "when": return "What the signals show:\n" + bl(anomLines());
+        case "impact": return "Impacted services in order of first anomaly:\n" + bl(a.impacted.map(i => `${i.service} since ${i.since} (${i.status}): ${i.signals.join(", ")}`));
+        case "ruled": return a.ruled_out.length ? "Reviewed and ruled out:\n" + bl(a.ruled_out.map(r => `${r.title}: ${r.reason}`)) : "No changes were reviewed.";
+        case "postmortem": return `DRAFT POSTMORTEM (hypothesis, not confirmed)\nSummary: ${a.summary}\nCause: no change-based cause found; likely load or capacity.\nTimeline:\n${bl(anomLines())}\nFollow-ups: review autoscaler maximums and rate limits; add a capacity alert before saturation.`;
+        default: return `${base} ${a.summary.split(". ")[0]}.\n${checks}`;
+      }
+    }
+    const c0 = byId[top.id], shipped = top.change_ids.map(i => byId[i]).filter(Boolean);
+    switch (intent) {
+      case "summary": return `${a.summary}\n\nKey evidence:\n${bl(top.evidence.slice(0, 3))}`;
+      case "why": return `${top.title} ranks first (score ${top.score}, ${top.label.toLowerCase()}) because:\n${bl(top.evidence.slice(0, 4))}\n\nScore parts: timing ${top.components.temporal}, topology ${top.components.topology}, change type ${top.components.type}, content match ${top.components.semantic}, coverage ${top.components.coverage}.\n${top.caveat} To confirm: ${top.steps[0]}.`;
+      case "who": return "Changes behind the top suspect:\n" + bl(shipped.filter(c => c.diff.trim() || c.id === top.id).map(c => `${c.id} (${c.t}) ${c.title}, by ${c.author || "unknown"}`)) + "\nThis is who to loop in, not who to blame.";
+      case "when": { const t0 = top.time; return `Sequence around the top suspect:\n${bl([`${top.t} ${top.title}`].concat(a.anomalies.filter(x => x.onset >= t0).slice(0, 5).map(x => `${x.t} (+${x.onset - t0} min) ${x.label} on ${x.service}`)))}`; }
+      case "rollback": { const r = top.rollback; return `Proposed next step (draft, not applied): ${r.action}.\nBefore approving:\n${bl(r.side_effects)}\nAfter, confirm:\n${bl(r.verify.slice(0, 3))}\nAn engineer approves; Sleuth never applies changes.`; }
+      case "second": return hy[1] ? `Next most plausible: ${hy[1].title} (score ${hy[1].score}, ${hy[1].label.toLowerCase()}).\n${bl(hy[1].evidence.slice(0, 2))}` : "Only one change correlates with this incident, so there is no credible second suspect.";
+      case "ruled": return a.ruled_out.length ? "Reviewed and ruled out:\n" + bl(a.ruled_out.map(r => `${r.title}: ${r.reason}`)) : "No other changes were reviewed.";
+      case "prevent": return "Ways to stop a repeat:\n" + bl([
+        top.type === "config" || top.type === "infra" ? "Require review and a canary rollout for config and infrastructure changes that touch limits or pools" : "Use progressive rollout with automatic rollback when readiness checks fail",
+        "Alert on the leading signal (for example DB connections or memory) before customers see errors",
+        "Show each pull request's change risk before release, using this incident as an example"]);
+      case "kube": return kubeText();
+      case "impact": return "Impacted services in order of first anomaly:\n" + bl(a.impacted.map(i => `${i.service} since ${i.since} (${i.status}): ${i.signals.join(", ")}`));
+      case "metric": return "What the signals show:\n" + bl(anomLines());
+      case "postmortem": return `DRAFT POSTMORTEM (hypothesis, to be validated)\nSummary: ${a.summary}\nImpact: ${a.impacted.map(i => i.service).join(", ")} degraded from ${first ? first.t : "n/a"}.\nTimeline:\n${bl([`${top.t} ${top.title}`].concat(anomLines().slice(0, 4)))}\nSuspected cause: ${top.title} (score ${top.score}).\nProposed fix: ${top.rollback.action} (draft, needs approval).\nFollow-ups: add a canary and an alert on the leading signal; review how this change passed review.`;
+      default: return `I can answer questions about this incident from the evidence I have. Try: what happened, why this change, who changed it, when each thing started, what to do next, what the pods show, which metrics moved, what was ruled out, how to prevent it, or "write a postmortem".\n\n${a.summary}`;
+    }
+  }
+
+  return { analyze, rollup, offlineAnswer, detectAnomalies, hm };
+})();
+if (typeof module !== "undefined") module.exports = SleuthEngine;
+
+</script>
+<script>
+const $=id=>document.getElementById(id);
+// Data layer for the browser app: scenario store, fetch shim for the UI, GitHub connector, CSV import, metric simulator.
+const STORE = { raw: {}, analyses: {} };
+const CUSTOM = { provider: "azure", az: { org: "", project: "", repo: "", pat: "" }, gitlog: "", kube: null, repo: "", service: "", deps: "", changes: [], metrics: null, metricsNote: "", key: "" };
+const esc2 = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function addScenario(s) { STORE.raw[s.id] = s; STORE.analyses[s.id] = SleuthEngine.analyze(s); }
+for (const s of Object.values(DEMO_RAW)) addScenario(s);
+
+// ---- fetch shim: the UI talks to "/api/..."; here it is answered in the browser. Other URLs pass through.
+const _realFetch = window.fetch.bind(window);
+window.fetch = async (url, opts) => {
+  if (typeof url !== "string" || !url.startsWith("/api/")) return _realFetch(url, opts);
+  const J = o => ({ ok: true, json: async () => o });
+  if (url === "/api/scenarios") return J(Object.values(STORE.raw).map(v => ({ id: v.id, title: v.title, incident: v.incident, sev: v.sev, summary_hint: v.summary_hint })));
+  if (url === "/api/risk") return J(SleuthEngine.rollup(STORE.analyses));
+  if (url.startsWith("/api/analyze/")) return J(STORE.analyses[url.split("/").pop()]);
+  if (url === "/api/ask") {
+    const b = JSON.parse(opts.body), a = STORE.analyses[b.scenario];
+    if (CUSTOM.key) {
+      try {
+        const keep = { incident: a.scenario, summary: a.summary, anomalies: a.anomalies, ruled_out: a.ruled_out, impacted: a.impacted,
+          hypotheses: a.hypotheses.map(h => ({ rank: h.rank, title: h.title, t: h.t, score: h.score, label: h.label, evidence: h.evidence, steps: h.steps, change_ids: h.change_ids })) };
+        const r = await _realFetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: {
+          "content-type": "application/json", "x-api-key": CUSTOM.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+          body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 400,
+            system: "You are Sleuth, an incident investigation assistant. Answer ONLY from the analysis JSON provided. Never state a root cause as fact: use 'likely', 'hypothesis', 'correlates with'. If evidence is insufficient, say so. Under 120 words, plain text.",
+            messages: [{ role: "user", content: "Analysis JSON:\n" + JSON.stringify(keep).slice(0, 12000) + "\n\nQuestion: " + b.question }] }) });
+        const d = await r.json();
+        const text = (d.content || []).filter(x => x.type === "text").map(x => x.text).join("").trim();
+        if (text) return J({ mode: "claude", text });
+        throw new Error(d.error ? d.error.message : "empty");
+      } catch (e) { return J({ mode: "offline", text: SleuthEngine.offlineAnswer(b.question, a), note: "Claude unavailable (" + e.message + "); showing offline answer." }); }
+    }
+    return J({ mode: "offline", text: SleuthEngine.offlineAnswer(b.question, a) });
+  }
+  throw new Error("unknown " + url);
+};
+
+// ---- GitHub connector
+async function gh(path, token) {
+  const r = await _realFetch("https://api.github.com" + path, { headers: { Accept: "application/vnd.github+json", ...(token ? { Authorization: "Bearer " + token } : {}) } });
+  if (!r.ok) throw new Error(r.status === 404 ? "Repository not found (private repos need a token)" : r.status === 403 ? "GitHub rate limit reached. Add a token and retry" : "GitHub error " + r.status);
+  return r.json();
+}
+const CONFIG_RE = /\.(ya?ml|json|toml|ini|env|properties|conf|tf|tfvars)$|(^|\/)(dockerfile|values\.yaml|helm|k8s|config)/i;
+const DOCS_RE = /\.(md|txt|rst)$|(^|\/)docs?\//i;
+
+async function loadGithub(repo, token, service, count) {
+  repo = repo.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, "");
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error("Enter the repo as owner/name");
+  const list = await gh(`/repos/${repo}/commits?per_page=${count}`, token);
+  const details = await Promise.all(list.slice(0, count).map(c => gh(`/repos/${repo}/commits/${c.sha}`, token)));
+  const changes = details.map(d => {
+    const files = d.files || [], time = Math.floor(Date.parse(d.commit.author.date) / 60000);
+    const diff = files.map(f => `--- a/${f.filename}\n+++ b/${f.filename}\n` + (f.patch || "").split("\n").filter(l => /^[+-]/.test(l)).slice(0, 40).join("\n")).join("\n").trim();
+    return { id: d.sha.slice(0, 7), type: files.some(f => CONFIG_RE.test(f.filename)) ? "config" : "commit", service, time, t: SleuthEngine.hm(time),
+      title: d.commit.message.split("\n")[0].slice(0, 90), detail: files.map(f => f.filename).join(", ").slice(0, 160), diff, author: (d.author && d.author.login) || d.commit.author.name,
+      commits: [], docs_only: files.length > 0 && files.every(f => DOCS_RE.test(f.filename)) };
+  }).sort((a, b) => a.time - b.time);
+  let rel = [];
+  try { rel = await gh(`/repos/${repo}/releases?per_page=5`, token); } catch (e) { /* releases are optional */ }
+  const rels = rel.filter(r => r.published_at).map(r => ({ id: "release-" + r.tag_name, title: "Deployment " + r.tag_name, detail: "GitHub release", time: Math.floor(Date.parse(r.published_at) / 60000), who: r.author && r.author.login }));
+  CUSTOM.changes = attach(changes, rels, service);
+  CUSTOM.repo = repo;
+  return CUSTOM.changes.length;
+}
+
+// Turn pipeline runs / releases into deploy changes that "ship" the commits made since the previous one.
+function attach(changes, runs, service) {
+  const deploys = runs.sort((a, b) => a.time - b.time).map(r => ({ id: r.id, type: "deploy", service, time: r.time, t: SleuthEngine.hm(r.time), title: r.title, detail: r.detail, diff: "", author: r.who || "", commits: [], docs_only: false }));
+  for (const c of changes) { const d = deploys.find(x => x.time >= c.time); if (d) d.commits.push(c.id); }
+  return changes.concat(deploys.filter(d => d.commits.length)).sort((a, b) => a.time - b.time);
+}
+
+// ---- Azure DevOps (Azure Repos + Azure Pipelines)
+async function az(url, pat) {
+  const r = await _realFetch(url, { headers: { Authorization: "Basic " + btoa(":" + pat), Accept: "application/json, text/plain" } });
+  if (r.status === 401 || r.status === 403 || r.status === 203) throw new Error("Azure DevOps rejected the token (needs Code: Read and Build: Read)");
+  if (r.status === 404) throw new Error("Not found. Check organisation, project and repository names");
+  if (!r.ok) throw new Error("Azure DevOps error " + r.status);
+  return (r.headers.get("content-type") || "").includes("json") ? r.json() : r.text();
+}
+function lineDiff(a, b) {
+  const A = a.split("\n"), B = b.split("\n"), cb = {}, ca = {};
+  for (const l of B) cb[l] = (cb[l] || 0) + 1; for (const l of A) ca[l] = (ca[l] || 0) + 1;
+  const rem = A.filter(l => cb[l] > 0 ? (cb[l]--, false) : true), add = B.filter(l => ca[l] > 0 ? (ca[l]--, false) : true);
+  return rem.filter(l => l.trim()).map(l => "-" + l).concat(add.filter(l => l.trim()).map(l => "+" + l));
+}
+async function loadAzure(org, project, repo, pat, service, count) {
+  if (!org || !project || !repo || !pat) throw new Error("Fill organisation, project, repository and token");
+  const base = `https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}/_apis`, R = `${base}/git/repositories/${encodeURIComponent(repo)}`;
+  const list = await az(`${R}/commits?searchCriteria.$top=${count}&api-version=7.1`, pat);
+  const changes = await Promise.all(list.value.map(async c => {
+    const [det, ch] = await Promise.all([az(`${R}/commits/${c.commitId}?api-version=7.1`, pat), az(`${R}/commits/${c.commitId}/changes?api-version=7.1`, pat)]);
+    const files = (ch.changes || []).filter(x => x.item && !x.item.isFolder), parent = (det.parents || [])[0];
+    let diff = "";
+    for (const f of files.filter(f => CONFIG_RE.test(f.item.path)).slice(0, 3)) {
+      const get = v => az(`${R}/items?path=${encodeURIComponent(f.item.path)}&versionDescriptor.version=${v}&versionDescriptor.versionType=commit&$format=text&api-version=7.1`, pat).catch(() => "");
+      const [after, before] = await Promise.all([get(c.commitId), parent ? get(parent) : ""]);
+      diff += `--- a${f.item.path}\n+++ b${f.item.path}\n` + lineDiff(String(before), String(after)).slice(0, 40).join("\n") + "\n";
+    }
+    const time = Math.floor(Date.parse(c.author.date) / 60000), paths = files.map(f => f.item.path);
+    return { id: c.commitId.slice(0, 7), type: paths.some(p => CONFIG_RE.test(p)) ? "config" : "commit", service, time, t: SleuthEngine.hm(time), title: (c.comment || "").split("\n")[0].slice(0, 90),
+      detail: paths.join(", ").slice(0, 160), diff: diff.trim(), author: c.author.name, commits: [], docs_only: paths.length > 0 && paths.every(p => DOCS_RE.test(p)) };
+  }));
+  let runs = [];
+  try {
+    const b = await az(`${base}/build/builds?$top=10&statusFilter=completed&api-version=7.1`, pat);
+    runs = b.value.filter(x => x.finishTime).map(x => ({ id: "run-" + x.buildNumber, title: "Deployment " + x.buildNumber, detail: "Azure Pipelines · " + (x.definition ? x.definition.name : ""), time: Math.floor(Date.parse(x.finishTime) / 60000), who: x.requestedFor && x.requestedFor.displayName }));
+  } catch (e) { /* pipelines are optional */ }
+  CUSTOM.changes = attach(changes.sort((a, b) => a.time - b.time), runs, service);
+  CUSTOM.repo = `${org}/${project}/${repo}`;
+  return CUSTOM.changes.length;
+}
+
+// ---- any git host: paste the output of  git log -n 15 -p --format="commit %h|%aI|%an|%s"
+function parseGitLog(text, service) {
+  const out = []; let cur = null, file = null, n = 0;
+  for (const line of text.split(/\r?\n/)) {
+    const m = line.match(/^commit ([0-9a-f]{7,40})\|([^|]+)\|([^|]*)\|(.*)$/);
+    if (m) { cur = { id: m[1].slice(0, 7), time: Math.floor(Date.parse(m[2]) / 60000), author: m[3], title: m[4].slice(0, 90), files: [], d: [] }; out.push(cur); continue; }
+    if (!cur) continue;
+    const f = line.match(/^diff --git a\/(.+?) b\//);
+    if (f) { file = f[1]; n = 0; cur.files.push(file); cur.d.push(`--- a/${file}`, `+++ b/${file}`); continue; }
+    if (/^[+-]/.test(line) && !/^(\+\+\+|---)/.test(line) && n < 40 && line.slice(1).trim()) { cur.d.push(line); n++; }
+  }
+  if (!out.length) throw new Error("No commits found. Use the exact command shown above the box");
+  return out.map(c => ({ id: c.id, type: c.files.some(f => CONFIG_RE.test(f)) ? "config" : "commit", service, time: c.time, t: SleuthEngine.hm(c.time), title: c.title, detail: c.files.join(", ").slice(0, 160),
+    diff: c.d.join("\n"), author: c.author, commits: [], docs_only: c.files.length > 0 && c.files.every(f => DOCS_RE.test(f)) })).sort((a, b) => a.time - b.time);
+}
+
+// ---- Kubernetes: paste `kubectl get pods -o json` / `kubectl get events -o json`, or read via `kubectl proxy`
+function ageOf(ts) { const m = Math.max(0, Math.round((Date.now() - Date.parse(ts)) / 60000)); return m >= 1440 ? Math.floor(m / 1440) + "d" : m >= 60 ? Math.floor(m / 60) + "h" : m + "m"; }
+function parseKube(podsText, eventsText, ns) {
+  const items = x => { const j = JSON.parse(x); return j.items || [j]; };
+  const pods = items(podsText).map(p => {
+    const cs = (p.status && p.status.containerStatuses) || []; let status = (p.status && p.status.phase) || "Unknown";
+    for (const c of cs) { const w = c.state && c.state.waiting, t = (c.lastState && c.lastState.terminated) || (c.state && c.state.terminated);
+      if (w && w.reason) status = w.reason; else if (t && t.reason === "OOMKilled" && !c.ready) status = "OOMKilled"; }
+    return { name: p.metadata.name, ready: cs.filter(c => c.ready).length + "/" + (cs.length || (p.spec.containers || []).length), status, restarts: cs.reduce((a, c) => a + (c.restartCount || 0), 0), age: ageOf(p.metadata.creationTimestamp) };
+  });
+  const events = eventsText.trim() ? items(eventsText).map(e => { const ts = e.lastTimestamp || e.eventTime || e.metadata.creationTimestamp, time = Date.parse(ts) / 60000;
+    return { time, t: SleuthEngine.hm(time) + ":00", type: e.type || "Normal", reason: e.reason || "", object: (e.involvedObject ? e.involvedObject.kind.toLowerCase() + "/" + e.involvedObject.name : ""), msg: (e.message || "").slice(0, 160) }; }).sort((a, b) => a.time - b.time) : [];
+  return { cluster: "your cluster", namespace: ns || (pods[0] && "default") || "default", pods: pods.slice(0, 12), more: Math.max(0, pods.length - 12), rollouts: [], events };
+}
+
+// ---- metrics: CSV (time,service,metric,value) and a labelled simulator
+function parseTime(x) {
+  x = x.trim();
+  if (/^\d+(\.\d+)?$/.test(x)) { const n = Number(x); return Math.floor(n > 1e11 ? n / 60000 : n > 1e8 ? n / 60 : n); }
+  const d = Date.parse(x); if (isNaN(d)) throw new Error("Cannot read time: " + x); return Math.floor(d / 60000);
+}
+function parseCsv(text) {
+  const rows = text.trim().split(/\r?\n/).map(l => l.split(",").map(x => x.trim()));
+  if (rows[0] && /time/i.test(rows[0][0])) rows.shift();
+  const pts = {}; let t0 = Infinity, t1 = -Infinity;
+  for (const [t, svc, metric, v] of rows) {
+    if (!svc || !metric || v === undefined || isNaN(Number(v))) continue;
+    const m = parseTime(t); t0 = Math.min(t0, m); t1 = Math.max(t1, m);
+    ((pts[svc] = pts[svc] || {})[metric] = pts[svc][metric] || {})[m] = Number(v);
+  }
+  if (!isFinite(t0)) throw new Error("No usable rows. Expected columns: time,service,metric,value");
+  if (t1 - t0 > 3000) throw new Error("Time range too long (max about 50 hours at 1-minute resolution)");
+  const metrics = {};
+  for (const [svc, mm] of Object.entries(pts)) for (const [metric, byT] of Object.entries(mm)) {
+    let last = null; const ser = [];
+    for (let m = t0; m <= t1; m++) { if (m in byT) last = byT[m]; ser.push(last); }
+    const first = ser.find(x => x !== null) ?? 0;
+    (metrics[svc] = metrics[svc] || {})[metric] = ser.map(x => x === null ? first : x);
+  }
+  return { t0, metrics };
+}
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const SIM = { db_connections: [30, 96], latency_p95_ms: [120, 4200], error_rate_5xx: [0.4, 38], memory_pct: [55, 97], pod_restarts: [0, 9], cpu_pct: [35, 92], db_cpu_pct: [28, 82] };
+function simulate(change, metric, lag, svc) {
+  const t0 = change.time - 40, n = 90, rand = rng(7);
+  const gauss = () => Math.sqrt(-2 * Math.log(rand() + 1e-9)) * Math.cos(2 * Math.PI * rand());
+  const make = (m, onset) => { const [b, tg] = SIM[m]; return Array.from({ length: n }, (_, i) => { let v = b + gauss() * Math.max(b * 0.04, 0.05);
+    if (i + t0 >= onset) { let u = Math.min(1, (i + t0 - onset + 1) / 3); u = u * u * (3 - 2 * u); v += (tg - b) * u; } return Math.max(0, Math.round(v * 100) / 100); }); };
+  const on = change.time + lag, mm = { [metric]: make(metric, on) };
+  if (metric !== "latency_p95_ms") mm.latency_p95_ms = make("latency_p95_ms", on + 3);
+  if (metric !== "error_rate_5xx") mm.error_rate_5xx = make("error_rate_5xx", on + 6);
+  return { t0, metrics: { [svc]: mm } };
+}
+
+// ---- build + analyse the custom incident
+function buildCustom() {
+  const svc = CUSTOM.service.trim() || "my-service";
+  if (!CUSTOM.changes.length) throw new Error("Load changes from GitHub first (step 1)");
+  if (!CUSTOM.metrics) throw new Error("Add metrics first (step 2)");
+  const { t0, metrics } = CUSTOM.metrics, graph = {};
+  for (const part of CUSTOM.deps.split(",")) { const [a, b] = part.split(">").map(x => x.trim()); if (a && b) (graph[a] = graph[a] || []).push(b), graph[b] = graph[b] || []; }
+  graph[svc] = graph[svc] || [];
+  const others = Object.keys(metrics).filter(x => x !== svc && !(x in graph));
+  if (!CUSTOM.deps.trim()) for (const o of others) { graph[svc].push(o); graph[o] = []; }
+  for (const k of Object.keys(metrics)) graph[k] = graph[k] || [];
+  const len = Math.max(...Object.values(metrics).flatMap(m => Object.values(m).map(s => s.length)));
+  const tEnd = t0 + len - 1;
+  const s = { id: "custom", title: CUSTOM.repo || "Your data", incident: "Your incident", sev: "SEV-2", service: svc, summary_hint: `${CUSTOM.repo} · ${CUSTOM.changes.length} changes · ${CUSTOM.metricsNote}`,
+    graph, changes: CUSTOM.changes, metrics, logs: [], k8s: CUSTOM.kube ? CUSTOM.kube.events.filter(e => e.type === "Warning").slice(0, 2).map(e => ({ time: e.time, t: e.t, type: e.type, service: svc, msg: e.reason + ": " + e.msg })) : [], kube: CUSTOM.kube || null, chart: [], window: [t0, tEnd], t0, baseline_points: Math.max(10, Math.floor(len * 0.4)) };
+  const an = SleuthEngine.detectAnomalies(s), colors = ["#8d63f5", "#ffb224", "#ff4a5c"], seen = new Set();
+  for (const a of an) { const k = a.service + a.metric; if (seen.has(k) || s.chart.length >= 3) continue; seen.add(k); s.chart.push({ service: a.service, metric: a.metric, label: a.label, color: colors[s.chart.length] }); }
+  if (!s.chart.length) { const sv = Object.keys(metrics)[0], mt = Object.keys(metrics[sv])[0]; s.chart.push({ service: sv, metric: mt, label: mt, color: colors[0] }); }
+  if (an.length) s.window = [Math.max(t0, an[0].onset - 45), Math.min(tEnd, an[0].onset + 35)];
+  addScenario(s);
+}
+
+// ---- the "Integrations" view
+const GITLOG_CMD = 'git log -n 15 -p --format="commit %h|%aI|%an|%s"';
+function showConnect() {
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.dataset.id === "__connect"));
+  for (const id of ["main", "bar", "risk", "home"]) $(id).hidden = true;
+  const v = $("connect"), P = CUSTOM.provider; v.hidden = false;
+  const opts = CUSTOM.changes.filter(c => !c.docs_only && c.type !== "deploy").map(c => `<option value="${esc2(c.id)}">${esc2(c.t)} · ${esc2(c.title.slice(0, 50))}</option>`).join("");
+  const inp = (id, lab, val, ph, type) => `<label>${lab}</label><input id="${id}" type="${type || "text"}" value="${esc2(val)}" placeholder="${esc2(ph || "")}">`;
+  v.innerHTML = `<div class="bar"><h1>Integrations</h1><span class="dim">Runs in your browser. Tokens stay in this page and go only to the service you point them at.</span></div>
+  <div class="cgrid">
+  <div class="card f"><h2>1 · Source control and pipelines</h2>
+    <label>Where do your changes live?</label><select id="p_prov"><option value="azure"${P === "azure" ? " selected" : ""}>Azure DevOps (Repos + Pipelines)</option><option value="paste"${P === "paste" ? " selected" : ""}>Any git host: paste git log (works when the browser is blocked)</option><option value="github"${P === "github" ? " selected" : ""}>GitHub</option></select>
+    ${inp("g_svc", "Service these changes belong to", CUSTOM.service, "checkout-api")}
+    <div id="p_azure" ${P === "azure" ? "" : "hidden"}>${inp("a_org", "Organisation", CUSTOM.az.org, "contoso")}${inp("a_proj", "Project", CUSTOM.az.project, "Payments")}${inp("a_repo", "Repository", CUSTOM.az.repo, "checkout-api")}${inp("a_pat", "Personal access token (Code: Read, Build: Read)", CUSTOM.az.pat, "", "password")}</div>
+    <div id="p_github" ${P === "github" ? "" : "hidden"}>${inp("g_repo", "Repository (owner/name)", CUSTOM.repo, "your-org/your-repo")}${inp("g_tok", "Token (optional)", "", "", "password")}</div>
+    <div id="p_paste" ${P === "paste" ? "" : "hidden"}><label>Run this in your cloned repo, then paste the output</label><input readonly value='${esc2(GITLOG_CMD)}' onclick="this.select()"><textarea id="g_log" rows="6" style="width:100%;margin-top:6px;background:var(--panel2);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:8px;font:12px ui-monospace,monospace">${esc2(CUSTOM.gitlog)}</textarea></div>
+    <div class="small" style="margin:8px 0">Config files make a commit a config change. Pipeline runs become deployments that ship the commits since the last run.</div>
+    <button class="btn" id="g_go">Load changes</button> <span class="small" id="g_st">${CUSTOM.changes.length ? CUSTOM.changes.length + " changes loaded from " + esc2(CUSTOM.repo) : ""}</span></div>
+  <div class="card f"><h2>2 · Metrics</h2>
+    <label>Upload a CSV: time,service,metric,value (1-minute points; time as ISO or epoch)</label><input id="m_file" type="file" accept=".csv,text/csv">
+    <div class="small" style="margin:10px 0 4px">Export from Grafana (panel menu, Inspect, Data, Download CSV) and reshape to these columns. Known names: db_connections, db_cpu_pct, latency_p95_ms, error_rate_5xx, memory_pct, pod_restarts, cpu_pct.</div>
+    <div style="border-top:1px solid var(--line);margin:12px 0"></div>
+    <b>No metrics handy? Simulate a failure (clearly labelled as simulated)</b>
+    <label>Failure starts after this change</label><select id="s_chg">${opts || "<option value=''>Load changes first</option>"}</select>
+    <label>Metric that breaks</label><select id="s_met">${Object.keys(SIM).map(m => `<option>${m}</option>`).join("")}</select>
+    <label>Minutes after the change</label><input id="s_lag" type="number" value="4" min="1" max="30">
+    <button class="btn2" id="s_go" style="margin-top:8px">Generate simulated metrics</button> <span class="small" id="m_st">${esc2(CUSTOM.metricsNote)}</span></div>
+  <div class="card f"><h2>3 · Kubernetes</h2>
+    <div class="small">Run <code>kubectl get pods -n prod -o json</code> and <code>kubectl get events -n prod -o json</code>, then paste the output.</div>
+    <label>Pods JSON</label><textarea id="k_pods" rows="4" style="width:100%;background:var(--panel2);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:8px;font:12px ui-monospace,monospace"></textarea>
+    <label>Events JSON (optional)</label><textarea id="k_ev" rows="3" style="width:100%;background:var(--panel2);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:8px;font:12px ui-monospace,monospace"></textarea>
+    ${inp("k_ns", "Namespace", "prod", "prod")}
+    <button class="btn2" id="k_go" style="margin-top:8px">Use this cluster data</button> <span class="small" id="k_st">${CUSTOM.kube ? CUSTOM.kube.pods.length + " pods loaded" : ""}</span></div>
+  <div class="card f"><h2>4 · Grafana</h2>
+    <div class="small">Sleuth can add an annotation to a dashboard at the suspect change. Without a URL it runs in demo mode.</div>
+    ${inp("gf_url", "Grafana URL", GRAFANA.url, "https://grafana.contoso.com")}${inp("gf_tok", "Service account token (Editor)", GRAFANA.token, "", "password")}${inp("gf_uid", "Dashboard UID (optional)", GRAFANA.uid, "")}
+    <button class="btn2" id="gf_go" style="margin-top:8px">Save and test</button> <span class="small" id="gf_st"></span></div>
+  <div class="card f"><h2>5 · Investigate</h2>
+    ${inp("d_deps", "Service dependencies, optional (caller>callee, comma separated)", CUSTOM.deps, "api-gateway>checkout-api, checkout-api>orders-db")}
+    <div class="small" style="margin:6px 0 10px">If empty, every other service in your metrics is treated as a dependency of the changed service.</div>
+    <button class="btn" id="r_go">Run Sleuth</button> <span class="small" id="r_st"></span>
+    <div style="border-top:1px solid var(--line);margin:14px 0"></div>
+    ${inp("k_key", "Anthropic API key, optional (Ask box answers with Claude)", CUSTOM.key, "sk-ant-…", "password")}
+    <div class="small" style="margin-top:6px">Times are shown in UTC.</div></div>
+  </div>`;
+  const keep = () => { CUSTOM.provider = $("p_prov").value; CUSTOM.service = $("g_svc").value.trim(); CUSTOM.deps = $("d_deps").value; CUSTOM.key = $("k_key").value.trim();
+    CUSTOM.az = { org: $("a_org").value.trim(), project: $("a_proj").value.trim(), repo: $("a_repo").value.trim(), pat: $("a_pat").value.trim() }; CUSTOM.gitlog = $("g_log").value;
+    if ($("g_repo").value.trim()) CUSTOM.repo = $("g_repo").value.trim(); GRAFANA.url = $("gf_url").value.trim(); GRAFANA.token = $("gf_tok").value.trim(); GRAFANA.uid = $("gf_uid").value.trim(); };
+  $("p_prov").onchange = () => { keep(); showConnect(); };
+  $("g_go").onclick = async () => {
+    keep(); const svc = CUSTOM.service || "my-service", n = 15; $("g_st").textContent = "Loading…";
+    try {
+      if (CUSTOM.provider === "azure") { await loadAzure(CUSTOM.az.org, CUSTOM.az.project, CUSTOM.az.repo, CUSTOM.az.pat, svc, n); }
+      else if (CUSTOM.provider === "github") { await loadGithub(CUSTOM.repo, $("g_tok").value.trim(), svc, n); }
+      else { CUSTOM.changes = parseGitLog(CUSTOM.gitlog, svc).concat(CUSTOM.changes.filter(c => c.type === "deploy" && false)); CUSTOM.repo = "pasted git log"; }
+      CUSTOM.service = svc; const c = CUSTOM.changes.length; showConnect(); $("g_st").textContent = c + " changes loaded";
+    } catch (e) { $("g_st").textContent = "Failed: " + (e instanceof TypeError ? "the browser blocked the request (CORS or network). Use 'paste git log' instead." : e.message); }
+  };
+  $("m_file").onchange = async e => { keep(); try { CUSTOM.metrics = parseCsv(await e.target.files[0].text()); CUSTOM.metricsNote = "CSV loaded: " + Object.keys(CUSTOM.metrics.metrics).length + " service(s)"; $("m_st").textContent = CUSTOM.metricsNote; } catch (er) { $("m_st").textContent = "Failed: " + er.message; } };
+  $("s_go").onclick = () => { keep(); const c = CUSTOM.changes.find(x => x.id === $("s_chg").value); if (!c) { $("m_st").textContent = "Load changes first"; return; }
+    CUSTOM.metrics = simulate(c, $("s_met").value, +$("s_lag").value || 4, CUSTOM.service || "my-service");
+    CUSTOM.metricsNote = `simulated ${$("s_met").value} failure ${$("s_lag").value} min after ${c.id}`; $("m_st").textContent = "Generated: " + CUSTOM.metricsNote; };
+  $("k_go").onclick = () => { try { CUSTOM.kube = parseKube($("k_pods").value, $("k_ev").value, $("k_ns").value.trim()); $("k_st").textContent = CUSTOM.kube.pods.length + " pods, " + CUSTOM.kube.events.length + " events loaded"; } catch (e) { $("k_st").textContent = "Could not read that JSON: " + e.message; } };
+  $("gf_go").onclick = async () => { keep(); if (!GRAFANA.url) { $("gf_st").textContent = "No URL: demo mode"; return; }
+    try { const r = await _realFetch(GRAFANA.url.replace(/\/$/, "") + "/api/health"); $("gf_st").textContent = r.ok ? "Reachable. Use Annotate in Grafana on an incident." : "HTTP " + r.status; }
+    catch (e) { $("gf_st").textContent = "Blocked by the browser (CORS). Annotate will show a curl command to run instead."; } };
+  $("r_go").onclick = async () => { keep(); try { buildCustom(); await buildTabs(); load("custom"); } catch (e) { $("r_st").textContent = e.message; } };
+}
+
+// ---- Overview: healthy production, an alert fires, one click starts the investigation
+const HOME = { sid: "pool", cur: null, state: "healthy", timer: null, log: [] };
+const ALERT_METRICS = ["error_rate_5xx", "latency_p95_ms", "pod_restarts"];
+function homeCfg() {
+  const raw = STORE.raw[HOME.sid], a = STORE.analyses[HOME.sid];
+  const al = a.anomalies.find(x => ALERT_METRICS.includes(x.metric)) || a.anomalies[0];
+  return { raw, a, al, start: a.anomalies[0].onset - 12 };
+}
+function homeReset() { clearInterval(HOME.timer); HOME.state = "healthy"; HOME.cur = homeCfg().start; HOME.log = []; }
+function sparkFor(cfg, svc, cur) {
+  const mm = cfg.raw.metrics[svc]; if (!mm) return null;
+  const an = cfg.a.anomalies.find(x => x.service === svc), metric = (an && mm[an.metric] ? an.metric : ["error_rate_5xx", "latency_p95_ms"].find(m => mm[m])) || Object.keys(mm)[0], ser = mm[metric];
+  const t0 = cfg.raw.t0, i1 = Math.min(ser.length - 1, cur - t0), i0 = Math.max(0, i1 - 30), mx = Math.max(...ser) || 1;
+  const pts = ser.slice(i0, i1 + 1).map((v, i) => `${(i / 30 * 120).toFixed(1)},${(30 - v / mx * 26).toFixed(1)}`);
+  return { metric, value: ser[i1], path: "M" + pts.join("L") };
+}
+function tileHtml(svc, cfg, cur) {
+  const an = cfg.a.anomalies.filter(x => x.service === svc && x.onset <= cur);
+  const st = an.some(x => ALERT_METRICS.includes(x.metric)) ? "Degraded" : an.length ? "Warning" : "Healthy";
+  const col = st === "Degraded" ? "var(--red)" : st === "Warning" ? "var(--amb)" : "var(--grn)", sp = sparkFor(cfg, svc, cur);
+  const lab = sp ? (METRIC_NAMES[sp.metric] || sp.metric) : "no metrics";
+  return `<div class="tile" style="border-color:${st === "Healthy" ? "var(--line)" : col}"><div class="th"><span class="dot" style="background:${col}"></span><b>${esc2(svc)}</b><span class="sp small" style="margin-left:auto;color:${col}">${st}</span></div>
+    ${sp ? `<svg viewBox="0 0 120 32" width="100%" height="34"><path d="${sp.path}" fill="none" stroke="${col}" stroke-width="1.6"/></svg><div class="small">${esc2(lab)} <b style="color:var(--tx)">${nf(sp.value)}${UNIT[sp.metric] || ""}</b></div>` : `<div class="small" style="margin-top:20px">${lab}</div>`}</div>`;
+}
+const METRIC_NAMES = { error_rate_5xx: "5xx errors", latency_p95_ms: "p95 latency", db_connections: "DB connections", memory_pct: "memory", cpu_pct: "CPU", requests_per_sec: "requests/s" };
+function showHome() {
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.dataset.id === "__home"));
+  for (const id of ["main", "bar", "risk", "connect"]) $(id).hidden = true;
+  $("home").hidden = false; if (HOME.cur === null) homeReset(); renderHome();
+}
+function renderHome() {
+  if ($("home").hidden) return;
+  const cfg = homeCfg(), cur = HOME.cur, svcs = Object.keys(cfg.raw.graph);
+  const warn = cfg.a.anomalies.some(x => x.onset <= cur), chip = HOME.state === "healthy" ? ["grn", "ALL SYSTEMS HEALTHY"] : HOME.state === "running" ? ["amb", "SIGNALS DEGRADING"] : ["red", "INCIDENT"];
+  const feed = cfg.raw.changes.filter(c => c.time <= cur && !c.docs_only).slice(-6).reverse().map(c => `<div class="row"><span class="small" style="font-family:monospace">${c.t}</span><span>${esc2(c.title)}<div class="small">${c.type === "deploy" ? "Azure Pipelines" : "Azure Repos"} · ${esc2(c.service)} · ${esc2(c.author || "")}</div></span></div>`).join("");
+  let banner = "";
+  if (HOME.state === "alert") banner = `<div class="alertbar"><span class="pulse"></span><div><b>ALERT FIRING · Grafana</b><div class="small" style="color:#ffb3bb">${esc2(cfg.al.label)} on ${esc2(cfg.al.service)} since ${cfg.al.t} UTC · ${cfg.al.ratio ? "x" + cfg.al.ratio + " normal" : "above threshold"}</div></div><button class="btn" id="a2a" style="margin-left:auto">Alert to answer</button></div>`;
+  if (HOME.state === "investigating") banner = `<div class="alertbar" style="display:block"><b>Investigating ${esc2(cfg.al.label)} on ${esc2(cfg.al.service)}</b><ul class="steps">${HOME.log.map(l => `<li class="${l.done ? "done" : "run"}">${esc2(l.text)}</li>`).join("")}</ul><div class="small" id="a2n"></div></div>`;
+  const opts = Object.values(STORE.raw).filter(s => s.id !== "custom" && STORE.analyses[s.id].anomalies.length).map(s => `<option value="${s.id}"${s.id === HOME.sid ? " selected" : ""}>${esc2(s.incident)} · ${esc2(s.title)}</option>`).join("");
+  $("home").innerHTML = `<div class="bar"><h1>Production overview</h1><span class="dim">prod-us-east-1 · live view</span><span class="chip ${chip[0]}">${chip[1]}</span><span class="dim" style="margin-left:auto">${SleuthEngine.hm(cur)} UTC</span></div>
+  ${banner}
+  <div class="hgrid"><div class="card"><h2>Services</h2><div class="tiles">${svcs.map(s => tileHtml(s, cfg, cur)).join("")}</div></div>
+  <div style="display:grid;gap:14px;align-content:start"><div class="card"><h2>Recent changes <span class="small">Azure Repos · Azure Pipelines</span></h2>${feed || '<div class="small">No changes yet</div>'}<div class="small" style="margin-top:8px">Sleuth tracks every change and watches ${svcs.length} services. ${warn ? "Signals are moving." : "No anomalies."}</div></div>
+  <div class="card"><h2>Demo control <span class="chip gry" style="margin-left:6px">SIMULATION</span></h2><div class="small" style="margin-bottom:8px">Replays a recorded incident so you can show the flow. In production, a real alert from Grafana does this.</div>
+    <select id="h_sel" class="hsel">${opts}</select><div style="margin-top:8px;display:flex;gap:8px"><button class="btn" id="h_go"${HOME.state === "healthy" ? "" : " disabled"}>Simulate an incident</button><button class="btn2" id="h_rs">Reset to healthy</button></div></div></div></div>`;
+  $("h_sel").onchange = e => { HOME.sid = e.target.value; homeReset(); renderHome(); };
+  $("h_go").onclick = startIncident; $("h_rs").onclick = () => { homeReset(); renderHome(); };
+  if ($("a2a")) $("a2a").onclick = investigate;
+}
+function startIncident() {
+  if (HOME.state !== "healthy") return; HOME.state = "running"; const cfg = homeCfg();
+  HOME.timer = setInterval(() => { HOME.cur++; if (HOME.cur >= cfg.al.onset) { clearInterval(HOME.timer); HOME.state = "alert"; } renderHome(); }, 190);
+}
+async function investigate() {
+  const cfg = homeCfg(), al = cfg.al, wait = ms => new Promise(r => setTimeout(r, ms));
+  HOME.state = "investigating"; HOME.log = [];
+  const nSeries = Object.values(cfg.raw.metrics).reduce((a, m) => a + Object.keys(m).length, 0), nCh = cfg.raw.changes.filter(c => c.time <= al.onset).length;
+  const steps = [
+    () => `Alert received: ${al.label} on ${al.service} at ${al.t}`,
+    () => `Collected ${nCh} changes made before the alert (Azure Repos and Azure Pipelines)`,
+    () => `Read ${nSeries} metric series for ${Object.keys(cfg.raw.metrics).length} services (Grafana)`,
+    () => `Read ${cfg.raw.kube ? cfg.raw.kube.pods.length + (cfg.raw.kube.more || 0) : 0} pods, rollouts and events (Kubernetes)`,
+    () => { const t = performance.now(), an = SleuthEngine.analyze(cfg.raw), ms = Math.max(1, Math.round(performance.now() - t)); STORE.analyses[HOME.sid] = an;
+      return an.hypotheses.length ? `Scored every change in ${ms} ms. Top suspect: ${an.hypotheses[0].title} (${an.hypotheses[0].score})` : `Scored every change in ${ms} ms. No change correlates, so no deployment is blamed`; },
+    () => "Case file ready: evidence, diff, draft rollback"];
+  for (const f of steps) { HOME.log.push({ text: f(), done: false }); renderHome(); await wait(650); HOME.log[HOME.log.length - 1].done = true; renderHome(); }
+  $("a2n").innerHTML = 'Opening the case file… <span class="small">(the incident is a recorded replay; the collection and scoring ran on it for real)</span>';
+  await wait(1100); await buildTabs(); $("home").hidden = true; load(HOME.sid);
+}
+
+</script>
+<script>
+var _unused=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hm=m=>{m=((Math.floor(m)%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+let A=null,SEL=0,SID=null;
+const sevCls={'SEV-1':'red','SEV-2':'red','SEV-3':'amb'};
+async function buildTabs(){
+  const list=await (await fetch('/api/scenarios')).json();
+  $('tabs').innerHTML=list.map(s=>`<button class="tab" data-id="${s.id}">${esc(s.incident)} · ${esc(s.title)}</button>`).join('')+'<button class="tab" data-id="__connect">Integrations</button><button class="tab" data-id="__risk">Change risk</button>';
+  $('tabs').innerHTML='<button class="tab" data-id="__home">Overview</button>'+$('tabs').innerHTML;
+  $('tabs').onclick=e=>{const b=e.target.closest('.tab');if(b)load(b.dataset.id)};
+  return list;
+}
+async function init(){
+  const list=await buildTabs();
+  $('go').onclick=()=>ask($('q').value);$('gfBtn').onclick=sendGrafana;$('q').onkeydown=e=>{if(e.key==='Enter')ask($('q').value)};
+  load('__home');
+}
+async function showRisk(){
+  const R=await (await fetch('/api/risk')).json();
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.id==='__risk'));
+  $('main').hidden=true;$('bar').hidden=true;$('connect').hidden=true;$('home').hidden=true;$('risk').hidden=false;
+  const tbl=(rows,lab)=>`<table><tr><th>${lab}</th><th>Reviewed</th><th>Flagged</th><th>Highest score</th></tr>${rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${r.reviewed}</td><td>${r.flagged}</td><td>${r.top?`<span class="chip ${r.top>=.75?'red':r.top>=.5?'amb':'gry'}">${r.top.toFixed(2)}</span>`:'<span class="small">none</span>'}</td></tr>`).join('')}</table>`;
+  $('risk').innerHTML=`<div class="bar"><h1>Change risk</h1><span class="dim">${R.incidents} incidents analysed</span></div>
+  <div class="two"><div class="card"><h2>By change type</h2>${tbl(R.by_type,'Type')}</div><div class="card"><h2>By service</h2>${tbl(R.by_service,'Service')}</div></div>
+  <div class="card" style="margin-top:14px"><h2>Changes flagged as suspects</h2><table><tr><th>Incident</th><th>Change</th><th>Type</th><th>Score</th></tr>${R.flagged.map(f=>`<tr><td>${esc(f.incident)}</td><td>${esc(f.title)}</td><td>${esc(f.type)}</td><td><span class="chip ${f.score>=.75?'red':f.score>=.5?'amb':'gry'}">${f.score.toFixed(2)}</span></td></tr>`).join('')}</table>
+  <div class="note">${esc(R.note)} Flagged means correlated with an incident, not proven to be its cause.</div></div>`;
+}
+async function load(id){
+  if(id==='__risk')return showRisk();
+  if(id==='__connect')return showConnect();
+  if(id==='__home')return showHome();
+  $('main').hidden=false;$('bar').hidden=false;$('risk').hidden=true;$('connect').hidden=true;$('home').hidden=true;
+  SID=id;SEL=0;A=await (await fetch('/api/analyze/'+id)).json();
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.id===id));
+  $('chat').innerHTML='';render();
+}
+function selIds(){const h=A.hypotheses[SEL];return h?h.change_ids:[]}
+function render(){
+  const s=A.scenario;
+  $('bar').innerHTML=`<h1>${esc(s.incident)}</h1><span class="dim">${esc(s.service)} · prod-us-east-1</span><span class="chip ${sevCls[s.sev]||'amb'}">${esc(s.sev)}</span><span class="chip amb">INVESTIGATING</span><span class="dim" style="margin-left:auto">${esc(s.summary_hint)}</span>`;
+  renderTimeline();renderChart();renderSide();renderHyps();renderKube();
+  const sugs=A.hypotheses.length?['What happened?','Why do you suspect this change?','Who changed it?','What do the pods show?','What should we do next?','What did you rule out?','How do we prevent this?','Write a postmortem']:['What happened?','Should I blame a deployment?','What do the pods show?','Which services are impacted?'];
+  $('sug').innerHTML=sugs.map(x=>`<button>${esc(x)}</button>`).join('');
+  $('sug').onclick=e=>{if(e.target.tagName==='BUTTON'){$('q').value=e.target.textContent;ask(e.target.textContent)}};
+}
+function renderTimeline(){
+  const ids=selIds();
+  $('tl').innerHTML=A.timeline.map(e=>{
+    let col='var(--dim)';
+    if(e.kind==='change')col=e.docs_only?'#5b6178':'var(--vio)';
+    if(e.kind==='anomaly')col='var(--red)';if(e.kind==='event')col='var(--amb)';
+    const hl=e.kind==='change'&&ids.includes(e.ref), fade=e.kind==='change'&&!hl&&A.hypotheses.length&&!e.docs_only?false:(e.docs_only);
+    return `<li class="${hl?'hl':''} ${fade?'fade':''}"><span class="t">${e.t}</span><span class="d" style="background:${col}"></span><span><div class="x">${esc(e.title)}</div><div class="s">${esc(e.service)}${e.kind==='change'?' · '+esc(e.ctype):''}${hl?' · suspect':''}</div></span></li>`}).join('');
+}
+const GRAFANA={url:'',token:'',uid:''},SENT={};
+const UNIT={latency_p95_ms:'ms',error_rate_5xx:'%',db_cpu_pct:'%',memory_pct:'%',cpu_pct:'%',requests_per_sec:' req/s'};
+const nf=v=>v>=1000?(v/1000).toFixed(v>=10000?0:1)+'k':v>=100?Math.round(v)+'':v>=10?v.toFixed(0):v.toFixed(1).replace(/\.0$/,'');
+function toMs(min){if(min>=525600)return Math.round(min*60000);const d=new Date();d.setUTCHours(0,0,0,0);return d.getTime()+Math.round(min*60000)}
+function renderChart(){
+  const [w0,w1]=A.window,ids=selIds(),s=A.scenario;
+  $('gft').textContent=`${s.service} · service health`;$('gfr').textContent=`${hm(w0)}–${hm(w1)} UTC`;
+  const first=A.anomalies.length?A.anomalies[0].onset:null,W=560,H=125,L=44,R=10,T=16,B=20,x=m=>L+(m-w0)/(w1-w0)*(W-L-R);
+  const stp=Math.max(5,Math.ceil((w1-w0)/8/5)*5);
+  const sentT=A.hypotheses.filter(h=>SENT[SID+h.id]).map(h=>h.time);
+  $('chart').innerHTML='<div class="panels">'+A.chart.map(c=>{
+    const ser=A.series[c.service+':'+c.metric],u=UNIT[c.metric]||'',pts=[];
+    ser.forEach((v,i)=>{const m=A.t0+i;if(m>=w0&&m<=w1)pts.push([m,v])});
+    const mx=Math.max(...pts.map(p=>p[1]))||1,ymax=mx*1.12,y=v=>T+(1-v/ymax)*(H-T-B);
+    let g='';for(let i=0;i<=3;i++){const v=ymax*i/3;g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="#ffffff10"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${nf(v)}</text>`}
+    for(let m=Math.ceil(w0/stp)*stp;m<=w1;m+=stp)g+=`<text x="${x(m)}" y="${H-5}" text-anchor="middle">${hm(m)}</text>`;
+    if(first!==null)g+=`<rect x="${x(Math.max(first,w0))}" y="${T}" width="${x(w1)-x(Math.max(first,w0))}" height="${H-T-B}" fill="#ff4a5c" opacity=".07"/>`;
+    A.changes.forEach(ch=>{if(ch.time<w0||ch.time>w1||ch.docs_only)return;const on=ids.includes(ch.id);
+      g+=`<line x1="${x(ch.time)}" x2="${x(ch.time)}" y1="${T}" y2="${H-B}" stroke="${on?'#8d63f5':'#ffffff26'}" stroke-width="${on?1.8:1}" stroke-dasharray="${on?'5 4':'2 4'}"/><path d="M${x(ch.time)-4} ${T-6}h8l-4 6z" fill="${on?'#8d63f5':'#7c849b'}"/>`});
+    sentT.forEach(t=>{if(t>=w0&&t<=w1)g+=`<line x1="${x(t)}" x2="${x(t)}" y1="${T}" y2="${H-B}" stroke="#ffb224" stroke-width="1.6"/><rect x="${x(t)-5}" y="${T-9}" width="10" height="9" rx="2" fill="#ffb224"/>`});
+    const d=pts.map((p,i)=>(i?'L':'M')+x(p[0]).toFixed(1)+' '+y(p[1]).toFixed(1)).join('');
+    const area=d+`L${x(pts[pts.length-1][0])} ${H-B}L${x(pts[0][0])} ${H-B}Z`;
+    const last=pts[pts.length-1][1],min=Math.min(...pts.map(p=>p[1]));
+    return `<div class="pnl"><div class="ph"><b>${esc(c.label)}</b><span class="st">${esc(c.service)}</span></div><svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${esc(c.label)} over time">${g}<path d="${area}" fill="${c.color}" opacity=".12"/><path d="${d}" fill="none" stroke="${c.color}" stroke-width="2" stroke-linejoin="round"/></svg><div class="st" style="padding:0 4px">last <b style="color:var(--tx)">${nf(last)}${u}</b> · max ${nf(mx)}${u} · min ${nf(min)}${u}</div></div>`}).join('')+'</div>'
+   +'<div class="small" style="margin-top:8px"><span style="color:#8d63f5">&#9660; purple</span> suspect change · <span>&#9660; grey</span> other change · <span style="color:#ff4a5c">red band</span> anomaly period'+(sentT.length?' · <span style="color:#ffb224">orange</span> annotation sent by Sleuth':'')+'</div>';
+}
+function curlFor(p){return `curl -X POST ${GRAFANA.url||'https://YOUR-GRAFANA'}/api/annotations -H "Authorization: Bearer ${GRAFANA.token?'<token>':'<service-account-token>'}" -H "Content-Type: application/json" -d '${JSON.stringify(p)}'`}
+async function sendGrafana(){
+  const h=A.hypotheses[SEL],o=$('gfout');
+  if(!h){o.innerHTML='Nothing to annotate: no change-based hypothesis for this incident.';return}
+  const p={time:toMs(h.time),tags:['sleuth','suspect-change',h.service],text:`Sleuth: ${h.title} ranked #${h.rank} (score ${h.score}, ${h.label.toLowerCase()}). Hypothesis, not proof.`};
+  if(GRAFANA.uid)p.dashboardUID=GRAFANA.uid;
+  if(GRAFANA.url){
+    try{const r=await fetch(GRAFANA.url.replace(/\/$/,'')+'/api/annotations',{method:'POST',headers:{'content-type':'application/json',Authorization:'Bearer '+GRAFANA.token},body:JSON.stringify(p)});
+      if(!r.ok)throw new Error('HTTP '+r.status);SENT[SID+h.id]=true;renderChart();
+      o.innerHTML=`<span class="ok">Annotation created in Grafana.</span> Open your dashboard to see the marker at ${h.t}.`;return}
+    catch(e){o.innerHTML=`<span class="bad">Could not reach Grafana from the browser (${esc(e.message)}).</span> This is usually CORS. Run this command instead:<pre>${esc(curlFor(p))}</pre>`;return}
+  }
+  SENT[SID+h.id]=true;renderChart();
+  o.innerHTML=`<span class="warn">Demo mode: no Grafana URL set (Integrations tab).</span> The orange marker above shows what Sleuth would add to your real dashboard. Payload sent to <code>/api/annotations</code>:<pre>${esc(JSON.stringify(p,null,2))}</pre>Equivalent command:<pre>${esc(curlFor(p))}</pre>`;
+}
+function renderKube(){
+  const k=A.kube;$('kctx').textContent=k?`${k.cluster} · ns/${k.namespace}`:'';
+  if(!k){$('kube').innerHTML='<div class="small">No cluster data loaded. Paste <code>kubectl get pods -o json</code> in the Integrations tab.</div>';return}
+  const h=A.hypotheses[SEL],cls=p=>p.status==='Running'&&p.ready.split('/')[0]===p.ready.split('/')[1]?'ok':/CrashLoop|OOM|Error|Evicted|ImagePull/.test(p.status)?'bad':'warn';
+  const pods=`<div class="term"><div class="cmd">$ kubectl get pods -n ${esc(k.namespace)}</div><table><tr><th>NAME</th><th>READY</th><th>STATUS</th><th>RESTARTS</th><th>AGE</th></tr>${k.pods.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.ready)}</td><td class="${cls(p)}">${esc(p.status)}</td><td class="${p.restarts>2?'bad':''}">${p.restarts}</td><td>${esc(p.age)}</td></tr>`).join('')}</table>${k.more?`<div class="cmd">… and ${k.more} more pods</div>`:''}</div>`;
+  const ro=k.rollouts.length?`<div class="term" style="margin-top:8px"><div class="cmd">$ kubectl rollout history deployment -n ${esc(k.namespace)}</div><table><tr><th>REVISION</th><th>IMAGE</th><th>TIME</th><th>STATUS</th></tr>${k.rollouts.map(r=>`<tr><td>${esc(r.rev)}</td><td>${esc(r.image)}</td><td>${esc(r.time)}</td><td class="${r.bad?'bad':'ok'}">${esc(r.status)}${h&&r.time===h.t?' &nbsp;&larr; suspect change':''}</td></tr>`).join('')}</table></div>`:'';
+  const ev=`<div class="term" style="margin-top:8px"><div class="cmd">$ kubectl get events -n ${esc(k.namespace)} --sort-by=.lastTimestamp</div>${k.events.slice(-8).map(e=>`<div style="margin-top:3px"><span class="cmd">${esc(e.t.slice(0,8))}</span> <span class="${e.type==='Warning'?'warn':''}">${esc(e.type)}</span> ${esc(e.reason)} <span class="cmd">${esc(e.object)}</span><div style="padding-left:12px;color:#aab2c9">${esc(e.msg)}</div></div>`).join('')}</div>`;
+  $('kube').innerHTML=pods+ro+ev;
+}
+function renderSide(){
+  const ids=A.hypotheses.map(h=>h.change_ids).flat();
+  $('changes').innerHTML=A.changes.filter(c=>c.type!=='commit'||!A.changes.some(d=>d.commits.includes(c.id))).sort((a,b)=>b.time-a.time).map(c=>{
+    const h=A.hypotheses.find(h=>h.id===c.id);const r=A.ruled_out.find(r=>r.id===c.id);
+    const chip=h?`<span class="chip ${h.score>=.75?'red':h.score>=.5?'amb':'gry'}">${h.score.toFixed(2)}</span>`:`<span class="chip gry">ruled out</span>`;
+    return `<div class="row" title="${esc(r?r.reason:'')}"><span class="small" style="font-family:monospace">${c.t}</span><span>${esc(c.title)}<div class="small">${esc(c.service)}</div></span><span class="sp">${chip}</span></div>`}).join('');
+  $('impacted').innerHTML=A.impacted.map(i=>`<div class="row"><span style="width:8px;height:8px;border-radius:50%;background:${i.status==='Degraded'?'var(--red)':'var(--amb)'}"></span><span>${esc(i.service)}<div class="small">since ${i.since} · ${esc(i.signals.join(', '))}</div></span><span class="sp">${i.status}</span></div>`).join('');
+  $('sum').textContent=A.summary;
+}
+function renderHyps(){
+  if(!A.hypotheses.length){$('hyps').innerHTML=`<div class="empty"><b>No change-based hypothesis.</b><br>Nothing that changed recently correlates with this anomaly, so Sleuth does not blame a deployment. Check traffic, capacity and upstream dependencies.</div>`;$('detail').innerHTML=A.ruled_out.length?`<h3>Reviewed and ruled out</h3><ul class="ev">${A.ruled_out.map(r=>`<li>${esc(r.title)} <span class="small">(${esc(r.reason)})</span></li>`).join('')}</ul>`:'';return}
+  $('hyps').innerHTML=A.hypotheses.map((h,i)=>`<div class="hyp ${i===SEL?'sel':''}" data-i="${i}"><div class="top"><div class="ttl">#${h.rank} ${esc(h.title)}</div><span class="chip ${h.score>=.75?'red':h.score>=.5?'amb':'gry'}">${h.score.toFixed(2)}</span></div><div class="meter"><i style="width:${h.score*100}%"></i></div><div class="small">${esc(h.label)} · ${h.t}</div></div>`).join('');
+  $('hyps').onclick=e=>{const d=e.target.closest('.hyp');if(d){SEL=+d.dataset.i;renderTimeline();renderChart();renderHyps()}};
+  const h=A.hypotheses[SEL];
+  const diff=h.diff?`<pre class="diff">${h.diff.split('\n').map(l=>`<span class="${l[0]==='+'?'a':l[0]==='-'?'r':''}">${esc(l)}</span>`).join('\n')}</pre>`:'';
+  const comp=Object.entries(h.components).map(([k,v])=>`<span>${k}</span><span class="m"><i style="width:${v*100}%"></i></span><span>${v.toFixed(2)}</span>`).join('');
+  $('detail').innerHTML=`<h3>Potential root cause · hypothesis</h3><div style="font-weight:600">${esc(h.title)}</div>
+  <h3>Supporting evidence</h3><ul class="ev">${h.evidence.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>${diff}
+  <h3>Recommended investigation steps</h3><ol class="st">${h.steps.map(e=>`<li>${esc(e)}</li>`).join('')}</ol>
+  ${rollbackHtml(h)}
+  <h3>How the score is built</h3><div class="comp">${comp}</div>
+  ${A.ruled_out.length?`<h3>Reviewed and ruled out</h3><ul class="ev">${A.ruled_out.map(r=>`<li>${esc(r.title)} <span class="small">(${esc(r.reason)})</span></li>`).join('')}</ul>`:''}`;
+}
+function rollbackHtml(h){
+  const r=h.rollback;if(!r)return'';
+  const rd=r.reverse_diff?`<pre class="diff">${r.reverse_diff.split('\n').map(l=>`<span class="${l[0]==='+'?'a':l[0]==='-'?'r':''}">${esc(l)}</span>`).join('\n')}</pre>`:'';
+  return `<div class="rb"><div class="hd"><b>Proposed next step</b><span class="chip amb">${esc(r.status)} · NOT APPLIED</span></div>
+  <div style="margin-top:6px">${esc(r.action)}</div>${rd}
+  <h3>Before you approve</h3><ul class="ev">${r.side_effects.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+  <h3>Confirm it worked</h3><ul class="ev">${r.verify.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+  <div class="small" style="margin-top:8px">${esc(r.approval)}</div>
+  <div style="margin-top:8px"><button class="btn2" onclick="copyPR()">Copy PR description</button> <span class="small" id="cpmsg"></span></div></div>`;
+}
+function copyPR(){const t=A.hypotheses[SEL].rollback.pr_body;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>$('cpmsg').textContent='Copied',()=>$('cpmsg').textContent='Copy not available')}
+async function ask(q){
+  q=q.trim();if(!q)return;$('q').value='';
+  const c=$('chat');c.insertAdjacentHTML('beforeend',`<div class="qm">${esc(q)}</div>`);
+  c.insertAdjacentHTML('beforeend','<div class="am" id="cur">Thinking…</div>');c.scrollTop=c.scrollHeight;
+  let r;
+  try{r=await (await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({scenario:SID,question:q})})).json()}
+  catch(e){r={mode:'offline',text:'Could not reach the server.'}}
+  const el=$('cur');el.removeAttribute('id');el.textContent='';
+  const src=(r.mode==='claude'?'Answered by Claude from this incident\u2019s evidence':'Answered by Sleuth from this incident\u2019s evidence')+(r.note?' · '+r.note:'');
+  let i=0;const step=()=>{i=Math.min(r.text.length,i+6);el.textContent=r.text.slice(0,i);c.scrollTop=c.scrollHeight;
+    if(i<r.text.length)setTimeout(step,10);else el.insertAdjacentHTML('beforeend',`<span class="src">${esc(src)}</span>`)};step();
+}
+init();
+</script></body></html>
